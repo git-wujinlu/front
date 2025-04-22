@@ -10,12 +10,14 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _obscurePassword = true;
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
-    final TextEditingController _usernameController = TextEditingController();
     return Scaffold(
       body: Center(
         child: Container(
@@ -50,14 +52,19 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 child: TextField(
                   textAlignVertical: TextAlignVertical.center,
-                  controller: _usernameController,
+                  controller: _passwordController,
+                  obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     border: InputBorder.none,
                     hintText: '密码',
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: Icon(Icons.lock),
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.clear),
-                      onPressed: _usernameController.clear,
+                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility,),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
                   ),
                 ),
