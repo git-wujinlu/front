@@ -29,7 +29,6 @@ class _HomePageState extends State<HomePage> {
     final width = size.width;
     final PageController _pageControoller = PageController();
     return Scaffold(
-      // body: _pages[_pageIndex],
       body: PageView(
         controller: _pageControoller,
         onPageChanged: _changePageIndex,
@@ -44,6 +43,7 @@ class _HomePageState extends State<HomePage> {
             curve: Curves.easeInOut,
           );
         },
+        selectedItemColor: Colors.deepPurple.shade700,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "问答"),
           BottomNavigationBarItem(icon: Icon(Icons.mail), label: "消息"),
