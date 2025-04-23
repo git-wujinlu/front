@@ -49,7 +49,6 @@ class _LoginPageState extends State<LoginPage> {
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
-    final TextEditingController _usernameController = TextEditingController();
     return Scaffold(
       body: Center(
         child: Container(
