@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:demo1/pages/home/ConversationPage.dart';
 
 class MessagePage extends StatefulWidget {
   const MessagePage({super.key});
@@ -84,81 +85,29 @@ class MyQuestionsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery
+        .of(context)
+        .size;
     final width = size.width;
     final height = size.height;
 
     return ListView.builder(
       itemCount: 10,
       itemBuilder: (context, index) {
-        return SizedBox(
-          height: 0.15 * height,
-          child: Container(
-            margin: EdgeInsets.symmetric(vertical: 0.01 * height),
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 0.15 * width,
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/img.png',
-                      width: 0.15 * width,
-                      height: 0.15 * width,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10),
-                SizedBox(
-                  width: 0.65 * width,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        "问题标题",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        "提问内容提问内容提问内容提问内容提问内容",
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class MyAnswersTab extends StatelessWidget {
-  const MyAnswersTab({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final width = size.width;
-    final height = size.height;
-
-    return ListView.builder(
-      itemCount: 10,
-      itemBuilder: (context, index) {
-        return SizedBox(
-          height: 0.15 * height,
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ConversationPage(),
+              ),
+            );
+          },
+          child: SizedBox(
+            height: 0.15 * height,
             child: Container(
               margin: EdgeInsets.symmetric(vertical: 0.01 * height),
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(10),
@@ -177,7 +126,81 @@ class MyAnswersTab extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(width: 10),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    width: 0.65 * width,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          "问题标题",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          "提问内容提问内容提问内容提问内容提问内容",
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+  class MyAnswersTab extends StatelessWidget {
+  const MyAnswersTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final width = size.width;
+    final height = size.height;
+
+    return ListView.builder(
+      itemCount: 10,
+      itemBuilder: (context, index) {
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ConversationPage(),
+              ),
+            );
+          },
+          child: SizedBox(
+            height: 0.15 * height,
+            child: Container(
+              margin: EdgeInsets.symmetric(vertical: 0.01 * height),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 0.15 * width,
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/img.png',
+                        width: 0.15 * width,
+                        height: 0.15 * width,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
                   SizedBox(
                     width: 0.65 * width,
                     child: Column(
@@ -198,9 +221,11 @@ class MyAnswersTab extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
+          ),
         );
       },
     );
   }
-}
+
+  }
