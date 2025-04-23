@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:demo1/pages/home/SettingsPage.dart';
 import 'package:demo1/pages/home/ProfilePage.dart';
+import 'package:demo1/pages/home/MyQuestionsPage.dart';
+import 'package:demo1/pages/home/MyAnswersPage.dart';
+import 'package:demo1/pages/home/MyFavoritesPage.dart';
+import 'package:demo1/pages/home/BrowseHistoryPage.dart';
 
 class SelfPage extends StatefulWidget {
   const SelfPage({super.key});
@@ -174,7 +178,12 @@ class _SelfPageState extends State<SelfPage> {
               title: '我的回答',
               trailing: '38条',
               onTap: () {
-                print('我的回答被点击了！');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyAnswersPage(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -183,7 +192,12 @@ class _SelfPageState extends State<SelfPage> {
               title: '我的提问',
               trailing: '2条',
               onTap: () {
-                print('我的提问被点击了！');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyQuestionsPage(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -192,7 +206,12 @@ class _SelfPageState extends State<SelfPage> {
               title: '我的收藏',
               trailing: '12条',
               onTap: () {
-                print('我的收藏被点击了！');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyFavoritesPage(),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -201,7 +220,12 @@ class _SelfPageState extends State<SelfPage> {
               title: '浏览历史',
               trailing: '25条',
               onTap: () {
-                print('浏览历史被点击了！');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BrowseHistoryPage(),
+                  ),
+                );
               },
             ),
           ],
