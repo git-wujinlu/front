@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:demo1/pages/home/CommentPage.dart';
 
 class ConversationPage extends StatefulWidget {
-  const ConversationPage({super.key});
+  final bool fromQuestion; // 新增参数
+  const ConversationPage({super.key, required this.fromQuestion});
 
   @override
   State<ConversationPage> createState() => _ConversationPageState();
@@ -119,10 +121,10 @@ class _ConversationPageState extends State<ConversationPage> {
                   children: [
                     Expanded(
                       child: Align(
-                        alignment: Alignment.bottomCenter, // **修改：底部对齐，向上扩展**
+                        alignment: Alignment.bottomCenter,
                         child: TextField(
                           controller: _textController,
-                          keyboardType: TextInputType.multiline, // 新增类型
+                          keyboardType: TextInputType.multiline,
                           minLines: 1,
                           maxLines: null,
                           decoration: InputDecoration(
@@ -137,13 +139,13 @@ class _ConversationPageState extends State<ConversationPage> {
                     ),
                     const SizedBox(width: 8),
                     Align(
-                      alignment: Alignment.bottomCenter, // **修改：发送按钮底部对齐**
+                      alignment: Alignment.bottomCenter,
                       child: ElevatedButton(
                         onPressed: () {
                           print('send');
                           _textController.clear();
                         },
-                          style: ElevatedButton.styleFrom(
+                        style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFFC7EFA9),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -164,15 +166,25 @@ class _ConversationPageState extends State<ConversationPage> {
               width: double.infinity,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 0.05 * width),
-                child: ElevatedButton(
-                  onPressed: () => print('end conversation'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade500,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text(
-                    '结束对话',
-                    style: TextStyle(color: Colors.white),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CommentPage(fromQuestion: widget.fromQuestion),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      '结束对话',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
               ),

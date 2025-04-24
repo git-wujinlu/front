@@ -99,7 +99,7 @@ class MyQuestionsTab extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ConversationPage(),
+                builder: (context) => const ConversationPage(fromQuestion: true),
               ),
             );
           },
@@ -173,7 +173,7 @@ class MyQuestionsTab extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ConversationPage(),
+                builder: (context) => const ConversationPage(fromQuestion: false),
               ),
             );
           },

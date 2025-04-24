@@ -94,9 +94,9 @@ class _AskResultPageState extends State<AskResultPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color:
-                            (selectedList[index] == false)
-                                ? Colors.white
-                                : Colors.purple.shade100,
+                        (selectedList[index] == false)
+                            ? Colors.white
+                            : Colors.purple.shade100,
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(color: Colors.grey.shade300),
                       ),
@@ -161,26 +161,26 @@ class _AskResultPageState extends State<AskResultPage> {
                               children: [
                                 Icon(
                                   Icons.thumb_up,
-                                  color: Colors.green,
+                                  color: Colors.red,
                                   size: 20,
                                 ),
                                 Text(
                                   '99%',
                                   style: TextStyle(
-                                    color: Colors.green,
+                                    color: Colors.red,
                                     fontSize: 16,
                                   ),
                                 ),
                                 SizedBox(width: 0.02 * width),
                                 Icon(
                                   Icons.thumb_down,
-                                  color: Colors.red,
+                                  color: Colors.green,
                                   size: 20,
                                 ),
                                 Text(
                                   '1%',
                                   style: TextStyle(
-                                    color: Colors.red,
+                                    color: Colors.green,
                                     fontSize: 16,
                                   ),
                                 ),
