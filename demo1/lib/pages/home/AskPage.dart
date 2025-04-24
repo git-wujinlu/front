@@ -1,7 +1,8 @@
-import 'package:demo1/pages/LoginPage.dart';
 import 'package:demo1/pages/home/AskResultPage.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
+import 'ConversationPage.dart';
 
 class AskPage extends StatefulWidget {
   const AskPage({super.key});
@@ -13,10 +14,6 @@ class AskPage extends StatefulWidget {
 }
 
 class _AskPageState extends State<AskPage> {
-  void turnToMessage(int index) {
-    print(index);
-  }
-
   Future toAsk(String s) {
     return Navigator.of(context).push(
       PageRouteBuilder(
@@ -103,7 +100,14 @@ class _AskPageState extends State<AskPage> {
               child: ListView.builder(
                 itemBuilder: (context, index) {
                   return GestureDetector(
-                    onTap: () => turnToMessage(index),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ConversationPage(fromQuestion: false),
+                        ),
+                      );
+                    },
                     child: Container(
                       padding: EdgeInsets.only(
                         left: 0.03 * width,
