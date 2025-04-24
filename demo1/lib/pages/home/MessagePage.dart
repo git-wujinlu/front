@@ -39,7 +39,7 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
               Container(
                 height: 0.05 * height,
                 alignment: Alignment.centerLeft,
-                child: Text("小logo", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                child: Text("logo", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               ),
               Container(
                 height: 0.05 * height,
@@ -52,10 +52,10 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
                   isScrollable: false, // 平均分配宽度
                   indicatorSize: TabBarIndicatorSize.tab, // 指示器覆盖整个 Tab
                   indicator: BoxDecoration(
-                    color: Colors.blue[200],
+                    color: Colors.blue.shade400,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  labelColor: Colors.black,
+                  labelColor: Colors.white,
                   unselectedLabelColor: Colors.black,
                   tabs: const [
                     Tab(text: "我的提问"),

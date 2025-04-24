@@ -103,42 +103,23 @@ class _CommentPageState extends State<CommentPage> {
 
           SizedBox(
             height: 0.05 * height,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 0.25 * width,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+            child: Center(
+              child: SizedBox(
+                width: 0.25 * width,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('取消', style: TextStyle(color: Colors.black)),
                   ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                  },
+                  child: const Text('确定', style: TextStyle(color: Colors.black)),
                 ),
-                const SizedBox(width: 20),
-                SizedBox(
-                  width: 0.25 * width,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
-                    child: const Text('确定', style: TextStyle(color: Colors.black)),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
           // 往下40%：浅灰色背景

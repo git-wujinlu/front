@@ -59,13 +59,14 @@ class _ConversationPageState extends State<ConversationPage> {
             // 对话列表 (75%)
             Expanded(
               child: ListView.builder(
+                reverse: true,
                 padding: EdgeInsets.symmetric(
                   horizontal: 0.05 * width,
                   vertical: 8,
                 ),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
-                  final msg = _messages[index];
+                  final msg = _messages[_messages.length - 1 - index];
                   final avatar = ClipOval(
                     child: Image.asset(
                       'assets/img.png',
@@ -79,12 +80,15 @@ class _ConversationPageState extends State<ConversationPage> {
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: msg['isMe'] ? Color(0xFFC7EFA9) : Colors.white,
+                      color: msg['isMe'] ? Colors.blue.shade400 : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       msg['text'],
-                      style: const TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: msg['isMe'] ? Colors.white : Colors.black,
+                      ),
                     ),
                   );
 
@@ -142,15 +146,18 @@ class _ConversationPageState extends State<ConversationPage> {
                       alignment: Alignment.bottomCenter,
                       child: ElevatedButton(
                         onPressed: () {
-                          print('send');
+                          print('发送');
                           _textController.clear();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFC7EFA9),
+                          backgroundColor: Colors.blue.shade400,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
-                        child: const Text('发送'),
+                        child: const Text(
+                          '发送',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                   ],
