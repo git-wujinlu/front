@@ -113,7 +113,7 @@ class _AskPageState extends State<AskPage> {
                         left: 0.03 * width,
                         right: 0.03 * width,
                       ),
-                      height: 0.15 * height,
+                      height: 0.18 * height,
                       child: Column(
                         children: [
                           Row(
