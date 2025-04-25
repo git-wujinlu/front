@@ -3,8 +3,6 @@ import 'package:demo1/pages/home/SettingsPage.dart';
 import 'package:demo1/pages/home/ProfilePage.dart';
 import 'package:demo1/pages/home/MyQuestionsPage.dart';
 import 'package:demo1/pages/home/MyAnswersPage.dart';
-import 'package:demo1/pages/home/MyFavoritesPage.dart';
-import 'package:demo1/pages/home/BrowseHistoryPage.dart';
 
 class SelfPage extends StatefulWidget {
   const SelfPage({super.key});
@@ -196,34 +194,6 @@ class _SelfPageState extends State<SelfPage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const MyQuestionsPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildFunctionButton(
-              icon: Icons.favorite,
-              title: '我的收藏',
-              trailing: '12条',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MyFavoritesPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildFunctionButton(
-              icon: Icons.history,
-              title: '浏览历史',
-              trailing: '25条',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BrowseHistoryPage(),
                   ),
                 );
               },
