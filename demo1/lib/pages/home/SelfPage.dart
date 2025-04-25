@@ -19,11 +19,14 @@ class _SelfPageState extends State<SelfPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人中心'),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        iconTheme: Theme.of(context).iconTheme,
         actions: [
           IconButton(
-            icon: const Icon(Icons.settings, color: Colors.black),
+            icon: Icon(
+              Icons.settings,
+              color: Theme.of(context).iconTheme.color,
+            ),
             onPressed: () {
               Navigator.push(
                 context,
@@ -41,7 +44,7 @@ class _SelfPageState extends State<SelfPage> {
             Container(
               margin: const EdgeInsets.only(bottom: 16.0),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -69,25 +72,31 @@ class _SelfPageState extends State<SelfPage> {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             '陈某某',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
+                              color:
+                                  Theme.of(context).textTheme.bodyLarge?.color,
                             ),
                           ),
                           SizedBox(height: 4),
                           Text(
                             '北京航空航天大学 计算机科学与技术 大三学生',
-                            style: TextStyle(fontSize: 14, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color:
+                                  Theme.of(context).textTheme.bodyMedium?.color,
+                            ),
                           ),
                           SizedBox(height: 8),
                           Text(
                             '积分：1280',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.deepPurple,
+                              color: Theme.of(context).primaryColor,
                             ),
                           ),
                         ],
@@ -101,7 +110,7 @@ class _SelfPageState extends State<SelfPage> {
             Container(
               margin: const EdgeInsets.only(bottom: 16.0),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
@@ -120,10 +129,10 @@ class _SelfPageState extends State<SelfPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '我的标签',
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                         fontSize: 16.0,
                         fontWeight: FontWeight.bold,
                       ),
@@ -132,26 +141,34 @@ class _SelfPageState extends State<SelfPage> {
                     Wrap(
                       spacing: 8.0,
                       runSpacing: 4.0,
-                      children: const [
+                      children: [
                         Chip(
-                          label: Text('算法'),
-                          backgroundColor: Colors.deepPurple,
-                          labelStyle: TextStyle(color: Colors.white),
+                          label: const Text('算法'),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.8),
+                          labelStyle: const TextStyle(color: Colors.white),
                         ),
                         Chip(
-                          label: Text('机器学习'),
-                          backgroundColor: Colors.deepPurple,
-                          labelStyle: TextStyle(color: Colors.white),
+                          label: const Text('机器学习'),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.8),
+                          labelStyle: const TextStyle(color: Colors.white),
                         ),
                         Chip(
-                          label: Text('Python'),
-                          backgroundColor: Colors.deepPurple,
-                          labelStyle: TextStyle(color: Colors.white),
+                          label: const Text('Python'),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.8),
+                          labelStyle: const TextStyle(color: Colors.white),
                         ),
                         Chip(
-                          label: Text('Web 开发'),
-                          backgroundColor: Colors.deepPurple,
-                          labelStyle: TextStyle(color: Colors.white),
+                          label: const Text('Web 开发'),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.8),
+                          labelStyle: const TextStyle(color: Colors.white),
                         ),
                       ],
                     ),
@@ -212,7 +229,7 @@ class _SelfPageState extends State<SelfPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -235,24 +252,34 @@ class _SelfPageState extends State<SelfPage> {
             ),
             child: Row(
               children: [
-                Icon(icon, size: 30, color: Colors.deepPurple),
+                Icon(icon, size: 30, color: Theme.of(context).primaryColor),
                 const SizedBox(width: 16),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16.0,
                     fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 const Spacer(),
                 if (trailing != null) ...[
                   Text(
                     trailing,
-                    style: const TextStyle(color: Colors.grey, fontSize: 14.0),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      fontSize: 14.0,
+                    ),
                   ),
                   const SizedBox(width: 8),
                 ],
-                const Icon(Icons.arrow_forward_ios, size: 16),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
+                ),
               ],
             ),
           ),

@@ -41,17 +41,20 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人资料'),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        iconTheme: Theme.of(context).iconTheme,
         actions: [
           TextButton(
             onPressed: () {
               // 保存个人资料
               print('保存个人资料');
             },
-            child: const Text(
+            child: Text(
               '保存',
-              style: TextStyle(color: Colors.deepPurple, fontSize: 16),
+              style: TextStyle(
+                color: Theme.of(context).primaryColor,
+                fontSize: 16,
+              ),
             ),
           ),
         ],
@@ -70,6 +73,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       backgroundImage: NetworkImage(
                         'https://via.placeholder.com/150',
                       ),
+                      backgroundColor: Theme.of(context).primaryColor
+                          .withOpacity(0.2), // Add background for placeholder
                     ),
                     Positioned(
                       right: 0,
@@ -77,7 +82,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: Colors.deepPurple,
+                          color: Theme.of(context).primaryColor,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -90,9 +95,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
+                Text(
                   '点击更换头像',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
@@ -172,9 +182,11 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withOpacity(0.6),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -182,7 +194,7 @@ class _ProfilePageState extends State<ProfilePage> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -208,21 +220,32 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            width: 1,
+          ),
         ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
-            Icon(icon, color: Colors.deepPurple),
+            Icon(icon, color: Theme.of(context).primaryColor),
             const SizedBox(width: 16),
             Expanded(
               child: TextField(
                 controller: controller,
                 maxLines: maxLines,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
                 decoration: InputDecoration(
                   labelText: label,
+                  labelStyle: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  ),
                   border: InputBorder.none,
                 ),
               ),
@@ -237,7 +260,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.deepPurple.withOpacity(0.1),
+        color: Theme.of(context).primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -245,10 +268,13 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Text(
             text,
-            style: const TextStyle(color: Colors.deepPurple, fontSize: 14),
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+              fontSize: 14,
+            ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.close, size: 16, color: Colors.deepPurple),
+          Icon(Icons.close, size: 16, color: Theme.of(context).primaryColor),
         ],
       ),
     );
@@ -258,17 +284,20 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.deepPurple),
+        border: Border.all(color: Theme.of(context).primaryColor),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.add, size: 16, color: Colors.deepPurple),
-          SizedBox(width: 4),
+          Icon(Icons.add, size: 16, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 4),
           Text(
             '添加标签',
-            style: TextStyle(color: Colors.deepPurple, fontSize: 14),
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+              fontSize: 14,
+            ),
           ),
         ],
       ),

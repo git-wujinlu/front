@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:demo1/providers/theme_provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -10,18 +12,18 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _isDarkMode = false;
   bool _isNotificationEnabled = true;
-  bool _isAutoPlay = true;
-  String _selectedLanguage = '简体中文';
+  bool _isSecurityExpanded = false;
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
       ),
       body: ListView(
         children: [
@@ -31,11 +33,9 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildSwitchTile(
                 icon: Icons.dark_mode,
                 title: '深色模式',
-                value: _isDarkMode,
+                value: themeProvider.isDarkMode,
                 onChanged: (value) {
-                  setState(() {
-                    _isDarkMode = value;
-                  });
+                  themeProvider.toggleTheme();
                 },
               ),
               _buildSwitchTile(
@@ -48,63 +48,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   });
                 },
               ),
-              _buildSwitchTile(
-                icon: Icons.play_circle,
-                title: '自动播放',
-                value: _isAutoPlay,
-                onChanged: (value) {
-                  setState(() {
-                    _isAutoPlay = value;
-                  });
-                },
-              ),
-            ],
-          ),
-          _buildSection(
-            title: '语言设置',
-            children: [
-              _buildLanguageTile(
-                title: '简体中文',
-                isSelected: _selectedLanguage == '简体中文',
-                onTap: () {
-                  setState(() {
-                    _selectedLanguage = '简体中文';
-                  });
-                },
-              ),
-              _buildLanguageTile(
-                title: 'English',
-                isSelected: _selectedLanguage == 'English',
-                onTap: () {
-                  setState(() {
-                    _selectedLanguage = 'English';
-                  });
-                },
-              ),
             ],
           ),
           _buildSection(
             title: '账号设置',
             children: [
+              _buildSecurityTile(),
               _buildButtonTile(
-                icon: Icons.security,
-                title: '账号安全',
+                icon: Icons.policy,
+                title: '隐私政策',
                 onTap: () {
-                  print('进入账号安全设置');
-                },
-              ),
-              _buildButtonTile(
-                icon: Icons.privacy_tip,
-                title: '隐私设置',
-                onTap: () {
-                  print('进入隐私设置');
-                },
-              ),
-              _buildButtonTile(
-                icon: Icons.help,
-                title: '帮助与反馈',
-                onTap: () {
-                  print('进入帮助与反馈');
+                  print('进入隐私政策');
                 },
               ),
             ],
@@ -126,13 +80,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   print('进入用户协议');
                 },
               ),
-              _buildButtonTile(
-                icon: Icons.policy,
-                title: '隐私政策',
-                onTap: () {
-                  print('进入隐私政策');
-                },
-              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -140,7 +87,11 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -170,9 +121,11 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.color?.withOpacity(0.6),
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -180,7 +133,7 @@ class _SettingsPageState extends State<SettingsPage> {
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -206,40 +159,25 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            width: 1,
+          ),
         ),
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.deepPurple),
-        title: Text(title),
+        leading: Icon(icon, color: Theme.of(context).primaryColor),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
+        ),
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: Colors.deepPurple,
+          activeColor: Theme.of(context).primaryColor,
         ),
-      ),
-    );
-  }
-
-  Widget _buildLanguageTile({
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
-        ),
-      ),
-      child: ListTile(
-        leading: const Icon(Icons.language, color: Colors.deepPurple),
-        title: Text(title),
-        trailing:
-            isSelected
-                ? const Icon(Icons.check, color: Colors.deepPurple)
-                : null,
-        onTap: onTap,
       ),
     );
   }
@@ -252,14 +190,139 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            width: 1,
+          ),
         ),
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.deepPurple),
-        title: Text(title),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        leading: Icon(icon, color: Theme.of(context).primaryColor),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+        ),
         onTap: onTap,
+      ),
+    );
+  }
+
+  Widget _buildSecurityTile() {
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(Icons.security, color: Theme.of(context).primaryColor),
+          title: Text(
+            '账号安全',
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
+          trailing: Icon(
+            _isSecurityExpanded
+                ? Icons.keyboard_arrow_up
+                : Icons.keyboard_arrow_down,
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+          ),
+          onTap: () {
+            setState(() {
+              _isSecurityExpanded = !_isSecurityExpanded;
+            });
+          },
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildSecurityItem(
+                  icon: Icons.lock,
+                  title: '修改密码',
+                  onTap: () {
+                    print('修改密码');
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildSecurityItem(
+                  icon: Icons.email,
+                  title: '绑定邮箱',
+                  subtitle: '已绑定：exa****@example.com',
+                  onTap: () {
+                    print('绑定邮箱');
+                  },
+                ),
+              ],
+            ),
+          ),
+          crossFadeState:
+              _isSecurityExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 300),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSecurityItem({
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(icon, color: Theme.of(context).primaryColor, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+          ),
+        ],
       ),
     );
   }

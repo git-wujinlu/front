@@ -104,7 +104,9 @@ class _AskPageState extends State<AskPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const ConversationPage(fromQuestion: false),
+                          builder:
+                              (context) =>
+                                  const ConversationPage(fromQuestion: false),
                         ),
                       );
                     },

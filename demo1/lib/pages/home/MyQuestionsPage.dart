@@ -32,8 +32,8 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的提问'),
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        iconTheme: Theme.of(context).iconTheme,
       ),
       body: ListView.builder(
         itemCount: _questions.length,
@@ -49,7 +49,7 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -74,44 +74,77 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
               children: [
                 Text(
                   question['title'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   question['content'],
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                    Icon(
+                      Icons.access_time,
+                      size: 16,
+                      color: Theme.of(
+                        context,
+                      ).iconTheme.color?.withOpacity(0.6),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       question['time'],
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      ),
                     ),
                     const SizedBox(width: 16),
-                    const Icon(
+                    Icon(
                       Icons.remove_red_eye,
                       size: 16,
-                      color: Colors.grey,
+                      color: Theme.of(
+                        context,
+                      ).iconTheme.color?.withOpacity(0.6),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       '${question['views']}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      ),
                     ),
                     const SizedBox(width: 16),
-                    const Icon(Icons.comment, size: 16, color: Colors.grey),
+                    Icon(
+                      Icons.comment,
+                      size: 16,
+                      color: Theme.of(
+                        context,
+                      ).iconTheme.color?.withOpacity(0.6),
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '${question['answers']}',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                      ),
                     ),
                   ],
                 ),
