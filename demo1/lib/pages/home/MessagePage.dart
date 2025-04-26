@@ -109,9 +109,13 @@ class MyQuestionsTab extends StatelessWidget {
               margin: EdgeInsets.symmetric(vertical: 0.01 * height),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                  color: Theme.of(context).textTheme.bodyLarge?.color == Colors.white
+                      ? Colors.black
+                      : Colors.white,
+                ),
               ),
               child: Row(
                 children: [
@@ -135,7 +139,9 @@ class MyQuestionsTab extends StatelessWidget {
                         Text(
                           "问题标题",
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold),
+
                         ),
                         SizedBox(height: 4),
                         Text(
@@ -183,9 +189,13 @@ class MyQuestionsTab extends StatelessWidget {
               margin: EdgeInsets.symmetric(vertical: 0.01 * height),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade300),
+                border: Border.all(
+                  color: Theme.of(context).textTheme.bodyLarge?.color == Colors.white
+                      ? Colors.black
+                      : Colors.white,
+                ),
               ),
               child: Row(
                 children: [
