@@ -63,23 +63,28 @@ class _AskPageState extends State<AskPage> {
             ),
             Container(
               width: 0.95 * width,
-              decoration: BoxDecoration(
-                border: Border.all(width: 2),
-                borderRadius: BorderRadius.circular(20),
-              ),
               child: TextField(
                 onSubmitted: AskEnter,
                 controller: _searchController,
                 textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
-                  border: InputBorder.none,
+                  border: OutlineInputBorder(
+                      borderSide: BorderSide(width: 1),
+                      borderRadius: BorderRadius.circular(20),
+                  ),
                   hintText: '输入你想问的问题',
                   prefixIcon: IconButton(
                     icon: Icon(Icons.search),
+                    color: Theme.of(
+                      context,
+                    ).iconTheme.color,
                     onPressed: () => toAsk(_searchController.text),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.clear),
+                    color: Theme.of(
+                      context,
+                    ).iconTheme.color,
                     onPressed: _searchController.clear,
                   ),
                 ),

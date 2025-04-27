@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../providers/theme_provider.dart';
 
 class AskResultPage extends StatefulWidget {
   final String searchString;
@@ -25,6 +28,7 @@ class _AskResultPageState extends State<AskResultPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
@@ -62,23 +66,24 @@ class _AskResultPageState extends State<AskResultPage> {
             Container(),
             Container(
               width: 0.95 * width,
-              decoration: BoxDecoration(
-                border: Border.all(width: 2),
-                borderRadius: BorderRadius.circular(20),
-              ),
               child: TextField(
                 // onSubmitted: ,
                 controller: _searchController,
                 textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
-                  border: InputBorder.none,
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(width: 1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   hintText: '输入你想问的问题',
                   prefixIcon: IconButton(
                     icon: Icon(Icons.search),
+                    color: Theme.of(context).iconTheme.color,
                     onPressed: () => print(''),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.clear),
+                    color: Theme.of(context).iconTheme.color,
                     onPressed: _searchController.clear,
                   ),
                 ),
@@ -94,11 +99,18 @@ class _AskResultPageState extends State<AskResultPage> {
                     child: Container(
                       decoration: BoxDecoration(
                         color:
-                        (selectedList[index] == false)
-                            ? Colors.white
-                            : Colors.purple.shade100,
+                            (selectedList[index] == false)
+                                ? themeProvider.isDarkMode
+                                    ? Theme.of(context).cardTheme.color
+                                    : Colors.white
+                                : Colors.purple.shade100,
                         borderRadius: BorderRadius.circular(15),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(
+                          color:
+                              themeProvider.isDarkMode
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade300,
+                        ),
                       ),
                       padding: EdgeInsets.only(
                         top: 0.012 * height,

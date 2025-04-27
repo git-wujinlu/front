@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/theme_provider.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -46,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
@@ -57,19 +61,41 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(width: 2),
-                ),
                 child: TextField(
                   textAlignVertical: TextAlignVertical.center,
                   controller: _usernameController,
                   decoration: InputDecoration(
-                    border: InputBorder.none,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color:
+                            passwordChecked || nowPage == 0
+                                ? Colors.black
+                                : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color:
+                            passwordChecked || nowPage == 0
+                                ? themeProvider.isDarkMode
+                                    ? Colors.deepPurple.shade700
+                                    : Colors.deepPurple.shade300
+                                : Colors.red,
+                      ),
+                    ),
                     hintText: '用户名',
-                    prefixIcon: Icon(Icons.person),
+                    prefixIcon: Icon(
+                      Icons.person,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
                     suffixIcon: IconButton(
                       icon: Icon(Icons.clear),
+                      color: Theme.of(context).iconTheme.color,
                       onPressed: _usernameController.clear,
                     ),
                   ),
@@ -77,16 +103,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
               SizedBox(height: 0.03 * height),
               Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    width: 2,
-                    color:
-                        passwordChecked || nowPage == 0
-                            ? Colors.black
-                            : Colors.red,
-                  ),
-                ),
                 child: TextField(
                   style: TextStyle(
                     color:
@@ -102,13 +118,41 @@ class _LoginPageState extends State<LoginPage> {
                   controller: _passwordController,
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
-                    border: InputBorder.none,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color:
+                            passwordChecked || nowPage == 0
+                                ? Colors.black
+                                : Colors.red,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color:
+                            passwordChecked || nowPage == 0
+                                ? Colors.black
+                                : Colors.red,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: BorderSide(
+                        color:
+                            passwordChecked || nowPage == 0
+                                ? themeProvider.isDarkMode
+                                    ? Colors.deepPurple.shade700
+                                    : Colors.deepPurple.shade300
+                                : Colors.red,
+                      ),
+                    ),
                     hintText: '密码',
                     prefixIcon: Icon(
                       Icons.lock,
                       color:
                           passwordChecked || nowPage == 0
-                              ? Colors.black
+                              ? Theme.of(context).iconTheme.color
                               : Colors.red,
                     ),
                     suffixIcon: IconButton(
@@ -118,7 +162,7 @@ class _LoginPageState extends State<LoginPage> {
                             : Icons.visibility,
                         color:
                             passwordChecked || nowPage == 0
-                                ? Colors.black
+                                ? Theme.of(context).iconTheme.color
                                 : Colors.red,
                       ),
                       onPressed: () {
@@ -135,16 +179,6 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       SizedBox(height: 0.03 * height),
                       Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            width: 2,
-                            color:
-                                passwordChecked || nowPage == 0
-                                    ? Colors.black
-                                    : Colors.red,
-                          ),
-                        ),
                         child: TextField(
                           style: TextStyle(
                             color:
@@ -160,13 +194,41 @@ class _LoginPageState extends State<LoginPage> {
                           controller: _passwordCheckController,
                           obscureText: _obscurePasswordCheck,
                           decoration: InputDecoration(
-                            border: InputBorder.none,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color:
+                                    passwordChecked || nowPage == 0
+                                        ? Colors.black
+                                        : Colors.red,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color:
+                                    passwordChecked || nowPage == 0
+                                        ? Colors.black
+                                        : Colors.red,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color:
+                                    passwordChecked || nowPage == 0
+                                        ? themeProvider.isDarkMode
+                                            ? Colors.deepPurple.shade700
+                                            : Colors.deepPurple.shade300
+                                        : Colors.red,
+                              ),
+                            ),
                             hintText: '确认密码',
                             prefixIcon: Icon(
                               Icons.lock,
                               color:
                                   passwordChecked || nowPage == 0
-                                      ? Colors.black
+                                      ? Theme.of(context).iconTheme.color
                                       : Colors.red,
                             ),
                             suffixIcon: IconButton(
@@ -176,7 +238,7 @@ class _LoginPageState extends State<LoginPage> {
                                     : Icons.visibility,
                                 color:
                                     passwordChecked || nowPage == 0
-                                        ? Colors.black
+                                        ? Theme.of(context).iconTheme.color
                                         : Colors.red,
                               ),
                               onPressed: () {
@@ -203,10 +265,17 @@ class _LoginPageState extends State<LoginPage> {
                         height: 0.05 * height,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.blue.shade500),
+                          border: Border.all(
+                            color:
+                                themeProvider.isDarkMode
+                                    ? Colors.deepPurple.shade700
+                                    : Colors.deepPurple.shade300,
+                          ),
                           color:
                               nowPage == 0
-                                  ? Colors.blue.shade500
+                                  ? themeProvider.isDarkMode
+                                      ? Colors.deepPurple.shade700
+                                      : Colors.deepPurple.shade300
                                   : Colors.white,
                         ),
                         child: Center(
@@ -215,8 +284,10 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(
                               color:
                                   nowPage == 0
-                                      ? Colors.grey.shade200
-                                      : Colors.blue.shade500,
+                                      ? Colors.grey.shade300
+                                      : themeProvider.isDarkMode
+                                      ? Colors.deepPurple.shade700
+                                      : Colors.deepPurple.shade300,
                               fontSize: 18,
                             ),
                           ),
@@ -232,10 +303,17 @@ class _LoginPageState extends State<LoginPage> {
                         height: 0.05 * height,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.blue.shade500),
+                          border: Border.all(
+                            color:
+                                themeProvider.isDarkMode
+                                    ? Colors.deepPurple.shade700
+                                    : Colors.deepPurple.shade300,
+                          ),
                           color:
                               nowPage == 1
-                                  ? Colors.blue.shade500
+                                  ? themeProvider.isDarkMode
+                                      ? Colors.deepPurple.shade700
+                                      : Colors.deepPurple.shade300
                                   : Colors.white,
                         ),
                         child: Center(
@@ -244,8 +322,10 @@ class _LoginPageState extends State<LoginPage> {
                             style: TextStyle(
                               color:
                                   nowPage == 1
-                                      ? Colors.grey.shade200
-                                      : Colors.blue.shade500,
+                                      ? Colors.grey.shade300
+                                      : themeProvider.isDarkMode
+                                      ? Colors.deepPurple.shade700
+                                      : Colors.deepPurple.shade300,
                               fontSize: 18,
                             ),
                           ),

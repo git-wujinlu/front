@@ -2,6 +2,9 @@ import 'package:demo1/pages/home/AskPage.dart';
 import 'package:demo1/pages/home/MessagePage.dart';
 import 'package:demo1/pages/home/SelfPage.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/theme_provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -24,6 +27,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
@@ -43,7 +47,10 @@ class _HomePageState extends State<HomePage> {
             curve: Curves.easeInOut,
           );
         },
-        selectedItemColor: Colors.deepPurple.shade700,
+        selectedItemColor:
+            themeProvider.isDarkMode
+                ? Colors.deepPurple.shade300
+                : Colors.deepPurple.shade700,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "问答"),
           BottomNavigationBarItem(icon: Icon(Icons.mail), label: "消息"),
