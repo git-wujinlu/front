@@ -47,7 +47,10 @@ class _AskResultPageState extends State<AskResultPage> {
               right: 0.015 * width,
             ),
             decoration: BoxDecoration(
-              color: Colors.grey[400],
+              color:
+                  themeProvider.isDarkMode
+                      ? Colors.grey[600]
+                      : Colors.grey[400],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text('标签' + i.toString()),
@@ -103,7 +106,9 @@ class _AskResultPageState extends State<AskResultPage> {
                                 ? themeProvider.isDarkMode
                                     ? Theme.of(context).cardTheme.color
                                     : Colors.white
-                                : Colors.purple.shade100,
+                                : themeProvider.isDarkMode
+                                ? Colors.deepPurple.shade600
+                                : Colors.deepPurple.shade100,
                         borderRadius: BorderRadius.circular(15),
                         border: Border.all(
                           color:

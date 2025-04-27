@@ -143,6 +143,7 @@ class _SelfPageState extends State<SelfPage> {
                       runSpacing: 4.0,
                       children: [
                         Chip(
+                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
                           label: const Text('算法'),
                           backgroundColor: Theme.of(
                             context,
@@ -150,6 +151,7 @@ class _SelfPageState extends State<SelfPage> {
                           labelStyle: const TextStyle(color: Colors.white),
                         ),
                         Chip(
+                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
                           label: const Text('机器学习'),
                           backgroundColor: Theme.of(
                             context,
@@ -157,6 +159,7 @@ class _SelfPageState extends State<SelfPage> {
                           labelStyle: const TextStyle(color: Colors.white),
                         ),
                         Chip(
+                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
                           label: const Text('Python'),
                           backgroundColor: Theme.of(
                             context,
@@ -164,6 +167,7 @@ class _SelfPageState extends State<SelfPage> {
                           labelStyle: const TextStyle(color: Colors.white),
                         ),
                         Chip(
+                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
                           label: const Text('Web 开发'),
                           backgroundColor: Theme.of(
                             context,
