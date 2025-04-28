@@ -52,7 +52,7 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
                   isScrollable: false, // 平均分配宽度
                   indicatorSize: TabBarIndicatorSize.tab, // 指示器覆盖整个 Tab
                   indicator: BoxDecoration(
-                    color: Colors.blue.shade400,
+                    color: Colors.deepPurple,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   labelColor: Colors.white,
