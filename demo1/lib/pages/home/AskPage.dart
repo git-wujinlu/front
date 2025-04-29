@@ -14,7 +14,10 @@ class AskPage extends StatefulWidget {
 }
 
 class _AskPageState extends State<AskPage> {
-  Future toAsk(String s) {
+  Future<void> toAsk(String s) {
+    if (s.isEmpty) {
+      return Future.delayed(Duration(seconds: 0));
+    }
     return Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder:
@@ -40,10 +43,6 @@ class _AskPageState extends State<AskPage> {
     );
   }
 
-  Future AskEnter(String s) {
-    return toAsk(s);
-  }
-
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
@@ -64,27 +63,23 @@ class _AskPageState extends State<AskPage> {
             Container(
               width: 0.95 * width,
               child: TextField(
-                onSubmitted: AskEnter,
+                onSubmitted: (String s) => toAsk(s),
                 controller: _searchController,
                 textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                      borderSide: BorderSide(width: 1),
-                      borderRadius: BorderRadius.circular(20),
+                    borderSide: BorderSide(width: 1),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   hintText: '输入你想问的问题',
                   prefixIcon: IconButton(
                     icon: Icon(Icons.search),
-                    color: Theme.of(
-                      context,
-                    ).iconTheme.color,
+                    color: Theme.of(context).iconTheme.color,
                     onPressed: () => toAsk(_searchController.text),
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.clear),
-                    color: Theme.of(
-                      context,
-                    ).iconTheme.color,
+                    color: Theme.of(context).iconTheme.color,
                     onPressed: _searchController.clear,
                   ),
                 ),

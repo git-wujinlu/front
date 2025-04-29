@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../../providers/theme_provider.dart';
@@ -15,8 +18,12 @@ class AskResultPage extends StatefulWidget {
 }
 
 class _AskResultPageState extends State<AskResultPage> {
+  int state = 0;
   var selectedList = List.filled(10, false);
   final String searchString;
+  Future<List<dynamic>>? _searchList;
+
+  final TextEditingController _searchController = TextEditingController();
 
   _AskResultPageState({required this.searchString});
 
@@ -26,18 +33,49 @@ class _AskResultPageState extends State<AskResultPage> {
     });
   }
 
+  Future<List<dynamic>> search(String s) async {
+    print(s);
+    var headers = {
+      'token': '270e57da-acb2-4150-b838-7b7eff2d2cdd',
+      'username': 'wwww',
+      'Content-Type': 'application/json',
+    };
+    var response = await http.post(
+      Uri.parse('http://192.168.107.1:4999/recommend'),
+      headers: headers,
+      body: json.encode({"question": s}),
+    );
+
+    print(s);
+    if (response.statusCode == 200) {
+      print(s);
+      state = 1;
+      return jsonDecode(response.body);
+
+      // print("response:${await response.stream.bytesToString()}");
+    } else {
+      print("error");
+      // print(response.reasonPhrase);
+    }
+    return [];
+  }
+
+  @override
+  void initState() {
+    _searchList = search(searchString);
+    _searchController.text = searchString;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
-    final TextEditingController _searchController = TextEditingController(
-      text: searchString,
-    );
-    List<Widget> getLabel() {
+    List<Widget> getLabel(List<dynamic> a) {
       List<Widget> ans = [];
-      for (int i = 1; i <= 3; ++i) {
+      for (int i = 0; i < a.length; ++i) {
         ans.add(
           Container(
             padding: EdgeInsets.only(
@@ -53,7 +91,7 @@ class _AskResultPageState extends State<AskResultPage> {
                       : Colors.grey[400],
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text('标签' + i.toString()),
+            child: Text(a[i]),
           ),
         );
         ans.add(SizedBox(width: 0.015 * width));
@@ -70,7 +108,11 @@ class _AskResultPageState extends State<AskResultPage> {
             Container(
               width: 0.95 * width,
               child: TextField(
-                // onSubmitted: ,
+                onSubmitted: (String s) {
+                  setState(() {
+                    _searchList = search(s);
+                  });
+                },
                 controller: _searchController,
                 textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
@@ -82,7 +124,11 @@ class _AskResultPageState extends State<AskResultPage> {
                   prefixIcon: IconButton(
                     icon: Icon(Icons.search),
                     color: Theme.of(context).iconTheme.color,
-                    onPressed: () => print(''),
+                    onPressed: () {
+                      setState(() {
+                        _searchList = search(_searchController.text);
+                      });
+                    },
                   ),
                   suffixIcon: IconButton(
                     icon: Icon(Icons.clear),
@@ -95,121 +141,125 @@ class _AskResultPageState extends State<AskResultPage> {
             SizedBox(height: 0.03 * height),
             Flexible(
               flex: 9,
-              child: ListView.builder(
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () => select(index),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color:
-                            (selectedList[index] == false)
-                                ? themeProvider.isDarkMode
-                                    ? Theme.of(context).cardTheme.color
-                                    : Colors.white
-                                : themeProvider.isDarkMode
-                                ? Colors.deepPurple.shade600
-                                : Colors.deepPurple.shade100,
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color:
-                              themeProvider.isDarkMode
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade300,
-                        ),
-                      ),
-                      padding: EdgeInsets.only(
-                        top: 0.012 * height,
-                        bottom: 0.012 * height,
-                        left: 0.03 * width,
-                        right: 0.03 * width,
-                      ),
-                      margin: EdgeInsets.only(
-                        top: 0.01 * height,
-                        bottom: 0.01 * height,
-                        left: 0.03 * width,
-                        right: 0.03 * width,
-                      ),
-                      height: 0.1 * height,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipOval(
-                            child: Image.asset(
-                              'assets/img.png',
-                              width: 0.12 * width,
-                              height: 0.12 * width,
-                              fit: BoxFit.fill,
+              child: FutureBuilder(
+                future: _searchList,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return CircularProgressIndicator();
+                  } else if (snapshot.hasData) {
+                    return ListView.builder(
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () => select(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  (selectedList[index] == false)
+                                      ? themeProvider.isDarkMode
+                                          ? Theme.of(context).cardTheme.color
+                                          : Colors.white
+                                      : themeProvider.isDarkMode
+                                      ? Colors.deepPurple.shade600
+                                      : Colors.deepPurple.shade100,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color:
+                                    themeProvider.isDarkMode
+                                        ? Colors.grey.shade700
+                                        : Colors.grey.shade300,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 0.03 * width),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    "神山识",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                    ),
-                                  ),
-                                  SizedBox(width: 0.02 * width),
-                                  Text(
-                                    "回答数：233",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 0.005 * height),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: getLabel(),
-                              ),
-                            ],
-                          ),
-                          Expanded(
+                            padding: EdgeInsets.only(
+                              top: 0.012 * height,
+                              bottom: 0.012 * height,
+                              left: 0.03 * width,
+                              right: 0.03 * width,
+                            ),
+                            margin: EdgeInsets.only(
+                              top: 0.01 * height,
+                              bottom: 0.01 * height,
+                              left: 0.03 * width,
+                              right: 0.03 * width,
+                            ),
+                            height: 0.1 * height,
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.thumb_up,
-                                  color: Colors.red,
-                                  size: 20,
-                                ),
-                                Text(
-                                  '99%',
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 16,
+                                ClipOval(
+                                  child: Image.asset(
+                                    snapshot.data?[index]['avatar'] ?? 'assets/img.png',
+                                    width: 0.12 * width,
+                                    height: 0.12 * width,
+                                    fit: BoxFit.fill,
                                   ),
                                 ),
-                                SizedBox(width: 0.02 * width),
-                                Icon(
-                                  Icons.thumb_down,
-                                  color: Colors.green,
-                                  size: 20,
+                                SizedBox(width: 0.03 * width),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          snapshot.data?[index]['username'],
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 18,
+                                          ),
+                                        ),
+                                        SizedBox(width: 0.02 * width),
+                                        Text(
+                                          "回答数：${(snapshot.data?[index]['userful_count'].toString()) as String}",
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 0.005 * height),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      children: getLabel(
+                                        snapshot.data?[index]['tags'],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                Text(
-                                  '1%',
-                                  style: TextStyle(
-                                    color: Colors.green,
-                                    fontSize: 16,
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Icon(
+                                        Icons.thumb_up,
+                                        color: Colors.red,
+                                        size: 20,
+                                      ),
+                                      Text(
+                                        snapshot.data?[index]['like_count']
+                                                .toString()
+                                            as String,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  );
+                        );
+                      },
+                      itemCount: snapshot.data?.length,
+                    );
+                  } else if (snapshot.hasError) {
+                    return Text('发生了一个错误');
+                  }
+                  return Text('暂时没有回答');
                 },
-                itemCount: 10,
               ),
             ),
             Flexible(
