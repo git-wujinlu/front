@@ -80,7 +80,7 @@ class _ConversationPageState extends State<ConversationPage> {
                     margin: const EdgeInsets.symmetric(vertical: 4),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: msg['isMe'] ? Colors.blue.shade400 : Colors.white,
+                      color: msg['isMe'] ? Colors.purple.shade700 : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -150,7 +150,7 @@ class _ConversationPageState extends State<ConversationPage> {
                           _textController.clear();
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.shade400,
+                          backgroundColor: Colors.purple.shade700,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         ),
