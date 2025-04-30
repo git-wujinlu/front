@@ -1,5 +1,10 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../providers/theme_provider.dart';
 
@@ -18,31 +23,123 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   final TextEditingController _passwordCheckController =
       TextEditingController();
+  final TextEditingController _mailController = TextEditingController();
+  final TextEditingController _codeController = TextEditingController();
   bool _obscurePasswordCheck = true;
   bool passwordChecked = true;
+  bool mailChecked = true;
   int nowPage = 0;
+  bool codeCollDown = true;
+  int codeTime = 0;
 
-  void login() {
+  Timer codeTimer = Timer(Duration(seconds: 1), () => {});
+
+  void codeTimerHandle() {}
+
+  void sendCode() async {
+    if (_mailController.text.isEmpty) {
+      setState(() {
+        mailChecked = false;
+      });
+    } else if (!mailChecked) {
+    } else if (codeCollDown) {
+      setState(() {
+        codeCollDown = false;
+      });
+      codeTime = 60;
+      codeTimer = Timer.periodic(Duration(seconds: 1), (codeTimer) {
+        if (codeTime != 0) {
+          setState(() {
+            --codeTime;
+          });
+        } else {
+          setState(() {
+            codeCollDown = true;
+          });
+          codeTimer.cancel();
+        }
+      });
+      var response = await http.get(
+        Uri.parse(
+          'http://192.168.107.1:8000/api/hangzd/user/send-code?mail=${_mailController.text}',
+        ),
+      );
+      if (jsonDecode(response.body)['success'] == true) {
+        print('success');
+      } else {
+        print("error");
+      }
+    }
+  }
+
+  void login() async {
     if (nowPage == 1) {
       setState(() {
         nowPage = 0;
       });
     } else {
-      Navigator.pushNamedAndRemoveUntil(context, '/homepage', (route) => false);
+      if (_usernameController.text.isEmpty ||
+          _passwordController.text.isEmpty) {
+        print('empty');
+      } else {
+        var headers = {'Content-Type': 'application/json'};
+        var response = await http.post(
+          Uri.parse('http://192.168.107.1:8000/api/hangzd/user/login'),
+          body: json.encode({
+            "username": _usernameController.text,
+            "password": _passwordController.text,
+          }),
+          headers: headers,
+        );
+        if (response.statusCode == 200) {
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setString('token', jsonDecode(response.body)['data']['token']);
+          prefs.setString('username', _usernameController.text);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/homepage',
+            (route) => false,
+          );
+          print('success');
+        } else {
+          print('error');
+        }
+      }
     }
   }
 
-  void signUp() {
+  void signUp() async {
     if (nowPage == 0) {
       setState(() {
         nowPage = 1;
       });
     } else {
-      if (!passwordChecked) {
+      if (!passwordChecked ||
+          _usernameController.text.isEmpty ||
+          _passwordController.text.isEmpty ||
+          _mailController.text.isEmpty ||
+          _codeController.text.isEmpty) {
+        print('empty');
       } else {
-        setState(() {
-          nowPage = 0;
-        });
+        var headers = {'Content-Type': 'application/json'};
+        var response = await http.post(
+          Uri.parse('http://192.168.107.1:8000/api/hangzd/user'),
+          body: json.encode({
+            "username": _usernameController.text,
+            "password": _passwordController.text,
+            "mail": _mailController.text,
+            "code": _codeController.text,
+          }),
+          headers: headers,
+        );
+        if (jsonDecode(response.body)['success'] == true) {
+          setState(() {
+            nowPage = 0;
+          });
+          print('success');
+        } else {
+          print('error:${jsonDecode(response.body)}');
+        }
       }
     }
   }
@@ -70,22 +167,14 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide(
-                        color:
-                            passwordChecked || nowPage == 0
-                                ? Colors.black
-                                : Colors.red,
-                      ),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide(
                         color:
-                            passwordChecked || nowPage == 0
-                                ? themeProvider.isDarkMode
-                                    ? Colors.deepPurple.shade700
-                                    : Colors.deepPurple.shade300
-                                : Colors.red,
+                            themeProvider.isDarkMode
+                                ? Colors.deepPurple.shade700
+                                : Colors.deepPurple.shade300,
                       ),
                     ),
                     hintText: '用户名',
@@ -111,8 +200,10 @@ class _LoginPageState extends State<LoginPage> {
                             : Colors.red,
                   ),
                   onChanged: (String s) {
-                    passwordChecked =
-                        s.compareTo(_passwordCheckController.text) == 0;
+                    setState(() {
+                      passwordChecked =
+                          s.compareTo(_passwordCheckController.text) == 0;
+                    });
                   },
                   textAlignVertical: TextAlignVertical.center,
                   controller: _passwordController,
@@ -187,8 +278,10 @@ class _LoginPageState extends State<LoginPage> {
                                     : Colors.red,
                           ),
                           onChanged: (String s) {
-                            passwordChecked =
-                                s.compareTo(_passwordController.text) == 0;
+                            setState(() {
+                              passwordChecked =
+                                  s.compareTo(_passwordController.text) == 0;
+                            });
                           },
                           textAlignVertical: TextAlignVertical.center,
                           controller: _passwordCheckController,
@@ -250,6 +343,143 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                         ),
+                      ),
+                      SizedBox(height: 0.03 * height),
+                      TextField(
+                        onChanged: (String s) {
+                          setState(() {
+                            if (s.isEmpty) {
+                              mailChecked = true;
+                            } else {
+                              mailChecked = new RegExp(
+                                "^([a-z0-9A-Z]+[-|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}\$",
+                              ).hasMatch(s);
+                            }
+                          });
+                        },
+                        textAlignVertical: TextAlignVertical.center,
+                        controller: _mailController,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(
+                              color:
+                                  mailChecked || nowPage == 0
+                                      ? Colors.black
+                                      : Colors.red,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(
+                              color:
+                                  mailChecked || nowPage == 0
+                                      ? Colors.black
+                                      : Colors.red,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide(
+                              color:
+                                  mailChecked || nowPage == 0
+                                      ? themeProvider.isDarkMode
+                                          ? Colors.deepPurple.shade700
+                                          : Colors.deepPurple.shade300
+                                      : Colors.red,
+                            ),
+                          ),
+                          hintText: '邮箱',
+                          prefixIcon: Icon(
+                            Icons.mail,
+                            color: Theme.of(context).iconTheme.color,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.clear),
+                            color:
+                                mailChecked || nowPage == 0
+                                    ? Theme.of(context).iconTheme.color
+                                    : Colors.red,
+                            onPressed: _mailController.clear,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 0.03 * height),
+                      Row(
+                        children: [
+                          Flexible(
+                            flex: 7,
+                            child: TextField(
+                              textAlignVertical: TextAlignVertical.center,
+                              controller: _codeController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                  borderSide: BorderSide(
+                                    color:
+                                        themeProvider.isDarkMode
+                                            ? Colors.deepPurple.shade700
+                                            : Colors.deepPurple.shade300,
+                                  ),
+                                ),
+                                hintText: '验证码',
+                                prefixIcon: Icon(
+                                  Icons.ad_units,
+                                  color: Theme.of(context).iconTheme.color,
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(Icons.clear),
+                                  color: Theme.of(context).iconTheme.color,
+                                  onPressed: _codeController.clear,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Flexible(
+                            flex: 4,
+                            child: GestureDetector(
+                              onTap: sendCode,
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  top: 0.01 * height,
+                                  bottom: 0.01 * height,
+                                ),
+                                margin: EdgeInsets.only(left: 0.02 * width),
+                                decoration: BoxDecoration(
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(
+                                        0.08,
+                                      ), // 阴影颜色
+                                      offset: Offset(1, 1), // 阴影偏移
+                                      spreadRadius: 0.1, // 阴影扩散度
+                                    ),
+                                  ],
+                                  // border: Border.all(width: 1),
+                                  // borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    codeCollDown ? '获取验证码' : '$codeTime秒后发送',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color:
+                                          codeCollDown
+                                              ? Colors.black
+                                              : Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ))

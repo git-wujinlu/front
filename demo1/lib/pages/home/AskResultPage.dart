@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../providers/theme_provider.dart';
 
@@ -34,28 +35,23 @@ class _AskResultPageState extends State<AskResultPage> {
   }
 
   Future<List<dynamic>> search(String s) async {
-    print(s);
+    final prefs = await SharedPreferences.getInstance();
     var headers = {
-      'token': '270e57da-acb2-4150-b838-7b7eff2d2cdd',
-      'username': 'wwww',
+      'token': prefs.getString('token')??'',
+      'username': prefs.getString('username')??'',
       'Content-Type': 'application/json',
     };
+    print(headers);
     var response = await http.post(
       Uri.parse('http://192.168.107.1:4999/recommend'),
       headers: headers,
       body: json.encode({"question": s}),
     );
-
-    print(s);
     if (response.statusCode == 200) {
-      print(s);
       state = 1;
       return jsonDecode(response.body);
-
-      // print("response:${await response.stream.bytesToString()}");
     } else {
       print("error");
-      // print(response.reasonPhrase);
     }
     return [];
   }
@@ -109,6 +105,9 @@ class _AskResultPageState extends State<AskResultPage> {
               width: 0.95 * width,
               child: TextField(
                 onSubmitted: (String s) {
+                  if (s.isEmpty) {
+                    Navigator.pop(context);
+                  }
                   setState(() {
                     _searchList = search(s);
                   });
@@ -125,6 +124,9 @@ class _AskResultPageState extends State<AskResultPage> {
                     icon: Icon(Icons.search),
                     color: Theme.of(context).iconTheme.color,
                     onPressed: () {
+                      if (_searchController.text.isEmpty) {
+                        Navigator.pop(context);
+                      }
                       setState(() {
                         _searchList = search(_searchController.text);
                       });
@@ -133,7 +135,10 @@ class _AskResultPageState extends State<AskResultPage> {
                   suffixIcon: IconButton(
                     icon: Icon(Icons.clear),
                     color: Theme.of(context).iconTheme.color,
-                    onPressed: _searchController.clear,
+                    onPressed: () {
+                      _searchController.clear;
+                      Navigator.pop(context);
+                    },
                   ),
                 ),
               ),
@@ -187,7 +192,8 @@ class _AskResultPageState extends State<AskResultPage> {
                               children: [
                                 ClipOval(
                                   child: Image.asset(
-                                    snapshot.data?[index]['avatar'] ?? 'assets/img.png',
+                                    snapshot.data?[index]['avatar'] ??
+                                        'assets/img.png',
                                     width: 0.12 * width,
                                     height: 0.12 * width,
                                     fit: BoxFit.fill,
