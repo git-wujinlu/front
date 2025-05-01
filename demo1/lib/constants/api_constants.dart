@@ -1,7 +1,7 @@
 class ApiConstants {
   // API基础路径
   static const String baseUrl =
-      'http://127.0.0.1:4523/m1/6248008-5941917-default';
+      'http://192.168.107.1:8000';
 
   // 用户相关接口
   static const String user = '/api/hangzd/user';
