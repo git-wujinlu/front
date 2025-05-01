@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import '../../services/user_service.dart';
+import '../../models/request_model.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -10,34 +14,217 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final TextEditingController _nameController = TextEditingController(
-    text: '陈某某',
-  );
-  final TextEditingController _schoolController = TextEditingController(
-    text: '北京航空航天大学',
-  );
-  final TextEditingController _majorController = TextEditingController(
-    text: '计算机科学与技术',
-  );
-  final TextEditingController _gradeController = TextEditingController(
-    text: '大三',
-  );
-  final TextEditingController _bioController = TextEditingController(
-    text: '热爱编程，喜欢探索新技术',
-  );
+  final UserService _userService = UserService();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _bioController = TextEditingController();
+  bool _isLoading = true;
+  String? _error;
+  Map<String, dynamic>? _userInfo;
+  String? _oldUsername;
+  List<String> _tags = [];
+  final TextEditingController _tagController = TextEditingController();
+  String? _avatarUrl;
+  File? _selectedImage;
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _schoolController.dispose();
-    _majorController.dispose();
-    _gradeController.dispose();
-    _bioController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadUserInfo();
+  }
+
+  Future<void> _loadUserInfo() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final request = Request(
+        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
+        username: 'wjy',
+      );
+
+      final response = await _userService.getUserByUsername(
+        'wjy',
+        request: request,
+      );
+      final userData = response['data'];
+
+      final tagsString = userData['tags'] as String? ?? '';
+      final tagsList = tagsString.isNotEmpty
+          ? tagsString.split(',').map((e) => e.trim()).toList()
+          : <String>[];
+
+      setState(() {
+        _userInfo = userData;
+        _oldUsername = userData['username'];
+        _nameController.text = userData['username'] ?? '';
+        _phoneController.text = userData['phone'] ?? '';
+        _bioController.text = userData['introduction'] ?? '';
+        _tags = tagsList;
+        _avatarUrl = userData['avatar'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800, // 限制图片最大宽度
+        maxHeight: 800, // 限制图片最大高度
+        imageQuality: 85, // 压缩图片质量
+      );
+
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+        });
+      } else {
+        // 用户取消选择，不做任何处理
+        print('用户取消选择图片');
+      }
+    } catch (e) {
+      print('选择图片失败: $e'); // 添加错误日志
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('选择图片失败：$e')),
+        );
+      }
+    }
+  }
+
+  void _addTag() {
+    if (_tagController.text.isEmpty) return;
+
+    final newTag = _tagController.text.trim();
+    if (_tags.contains(newTag)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('标签已存在')),
+      );
+      return;
+    }
+
+    setState(() {
+      _tags.add(newTag);
+      _tagController.clear();
+    });
+    print('标签已添加到列表: $newTag');
+    print('当前标签列表: $_tags');
+  }
+
+  void _removeTag(String tag) {
+    print('开始删除标签: $tag');
+    setState(() {
+      _tags.remove(tag);
+    });
+    print('标签已删除');
+    print('当前标签列表: $_tags');
+  }
+
+  Future<void> _saveUserInfo() async {
+    if (_isLoading) return; // 防止重复保存
+
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final request = Request(
+        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
+        username: 'wjy',
+      );
+
+      print('开始保存用户信息'); // 添加调试日志
+
+      // 先更新用户基本信息
+      final result = await _userService.updateUserProfile(
+        oldUsername: _oldUsername ?? '',
+        newUsername: _nameController.text,
+        phone: _phoneController.text,
+        introduction: _bioController.text,
+        avatar: _selectedImage?.path ?? _avatarUrl,
+        request: request,
+      );
+
+      print('用户基本信息更新成功: $result'); // 添加调试日志
+
+      // 再更新标签
+      await _userService.updateUserTags(
+        username: _oldUsername ?? '',
+        tags: _tags,
+        request: request,
+      );
+
+      print('标签更新成功'); // 添加调试日志
+
+      // 清除缓存以强制刷新数据
+      UserService.clearCache();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('保存成功')),
+      );
+
+      setState(() {
+        _userInfo = result['data'];
+        _oldUsername = result['data']['username'];
+        _avatarUrl = result['data']['avatar'];
+        _selectedImage = null;
+      });
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      print('保存用户信息失败: $e'); // 添加错误日志
+      if (!mounted) return;
+
+      setState(() {
+        _error = e.toString();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('保存失败: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_error!),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _loadUserInfo, child: const Text('重试')),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人资料'),
@@ -45,10 +232,7 @@ class _ProfilePageState extends State<ProfilePage> {
         iconTheme: Theme.of(context).iconTheme,
         actions: [
           TextButton(
-            onPressed: () {
-              // 保存个人资料
-              print('保存个人资料');
-            },
+            onPressed: _saveUserInfo,
             child: Text(
               '保存',
               style: TextStyle(
@@ -66,33 +250,40 @@ class _ProfilePageState extends State<ProfilePage> {
             margin: const EdgeInsets.all(16),
             child: Column(
               children: [
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundImage: NetworkImage(
-                        'https://via.placeholder.com/150',
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: _selectedImage != null
+                            ? FileImage(_selectedImage!)
+                            : (_avatarUrl != null
+                                    ? NetworkImage(_avatarUrl!)
+                                    : const AssetImage('assets/img.png'))
+                                as ImageProvider,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).primaryColor.withOpacity(0.2),
                       ),
-                      backgroundColor: Theme.of(context).primaryColor
-                          .withOpacity(0.2), // Add background for placeholder
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -117,19 +308,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 controller: _nameController,
               ),
               _buildTextField(
-                icon: Icons.school,
-                label: '学校',
-                controller: _schoolController,
-              ),
-              _buildTextField(
-                icon: Icons.book,
-                label: '专业',
-                controller: _majorController,
-              ),
-              _buildTextField(
-                icon: Icons.grade,
-                label: '年级',
-                controller: _gradeController,
+                icon: Icons.phone,
+                label: '手机号',
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
               ),
             ],
           ),
@@ -155,10 +337,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    _buildTag('算法'),
-                    _buildTag('机器学习'),
-                    _buildTag('Python'),
-                    _buildTag('Web 开发'),
+                    ..._tags.map((tag) => _buildTag(tag)),
                     _buildAddTag(),
                   ],
                 ),
@@ -175,39 +354,37 @@ class _ProfilePageState extends State<ProfilePage> {
     required String title,
     required List<Widget> children,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.color?.withOpacity(0.6),
-              fontWeight: FontWeight.bold,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.titleLarge?.color,
+              ),
             ),
           ),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(children: children),
-        ),
-      ],
+          ...children,
+        ],
+      ),
     );
   }
 
@@ -215,92 +392,89 @@ class _ProfilePageState extends State<ProfilePage> {
     required IconData icon,
     required String label,
     required TextEditingController controller,
+    TextInputType? keyboardType,
     int maxLines = 1,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.1),
-            width: 1,
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon),
+          labelText: label,
+          border: const OutlineInputBorder(),
         ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            Icon(icon, color: Theme.of(context).primaryColor),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                controller: controller,
-                maxLines: maxLines,
-                style: TextStyle(
-                  color: Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-                decoration: InputDecoration(
-                  labelText: label,
-                  labelStyle: TextStyle(
-                    color: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                  ),
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-          ],
-        ),
+        keyboardType: keyboardType,
+        maxLines: maxLines,
       ),
     );
   }
 
-  Widget _buildTag(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            text,
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(width: 4),
-          Icon(Icons.close, size: 16, color: Theme.of(context).primaryColor),
-        ],
-      ),
+  Widget _buildTag(String tag) {
+    return Chip(
+      label: Text(tag),
+      onDeleted: () {
+        _removeTag(tag);
+      },
+      deleteIcon: const Icon(Icons.close, size: 18),
     );
   }
 
   Widget _buildAddTag() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).primaryColor),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.add, size: 16, color: Theme.of(context).primaryColor),
-          const SizedBox(width: 4),
-          Text(
-            '添加标签',
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-              fontSize: 14,
-            ),
-          ),
-        ],
+    return GestureDetector(
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('添加标签'),
+              content: TextField(
+                controller: _tagController,
+                decoration: const InputDecoration(
+                  labelText: '标签名称',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('取消'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _addTag();
+                    Navigator.pop(context);
+                  },
+                  child: const Text('添加'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      child: Chip(
+        label: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.add, size: 18),
+            const SizedBox(width: 4),
+            Text('添加标签',
+                style: TextStyle(color: Theme.of(context).primaryColor)),
+          ],
+        ),
+        deleteIcon: const SizedBox.shrink(),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _bioController.dispose();
+    _tagController.dispose();
+    super.dispose();
   }
 }

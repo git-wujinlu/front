@@ -1,45 +1,280 @@
 import 'package:dio/dio.dart';
-import 'api_config.dart';
+import '../constants/api_constants.dart';
+import '../models/request_model.dart';
+import '../utils/api_error_handler.dart';
+import 'mock_service.dart';
+import 'dart:io';
 
 class UserService {
-  final Dio _dio = ApiConfig.createDio();
+  final Dio _dio;
+  // 添加静态变量用于存储最新的用户信息
+  static Map<String, dynamic>? _latestUserInfo;
 
-  // 获取用户信息
-  Future<Map<String, dynamic>> getUserInfo(String userId) async {
+  UserService() : _dio = MockService.dio {
+    // 在构造函数中设置 mock 拦截器
+    MockService.setupMockInterceptors();
+  }
+
+  // 获取用户信息（通过用户名）
+  Future<Map<String, dynamic>> getUserByUsername(
+    String username, {
+    Request? request,
+  }) async {
     try {
-      final response = await _dio.get('/api/users/$userId');
+      // 如果有最新数据，直接返回
+      if (_latestUserInfo != null) {
+        return {
+          'code': '0',
+          'message': null,
+          'data': _latestUserInfo,
+          'success': true,
+        };
+      }
+
+      final response = await _dio.get(
+        ApiConstants.userInfo.replaceAll('{username}', username),
+        options: Options(headers: request?.toHeaders()),
+      );
+
+      // 更新最新数据
+      _latestUserInfo = response.data['data'];
       return response.data;
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(ApiErrorHandler.handleError(e));
     }
   }
 
-  // 更新用户信息
-  Future<Map<String, dynamic>> updateUserInfo(
-    String userId,
-    Map<String, dynamic> data,
-  ) async {
+  // 获取用户标签
+  Future<Map<String, dynamic>> getUserTags(
+    String username, {
+    Request? request,
+  }) async {
     try {
-      final response = await _dio.put('/api/users/$userId', data: data);
-      return response.data;
+      // 使用getUserByUsername获取用户信息，然后从用户信息中提取标签
+      final userInfo = await getUserByUsername(username, request: request);
+      final tagsString = userInfo['data']['tags'] as String? ?? '';
+      final tagsList = tagsString.isNotEmpty
+          ? tagsString.split(',').map((e) => e.trim()).toList()
+          : <String>[];
+
+      return {'code': '0', 'message': null, 'data': tagsList, 'success': true};
     } on DioException catch (e) {
-      throw _handleError(e);
+      throw Exception(ApiErrorHandler.handleError(e));
     }
   }
 
-  // 统一处理错误
-  Exception _handleError(DioException e) {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return Exception('网络连接超时');
-      case DioExceptionType.badResponse:
-        return Exception('服务器响应错误: ${e.response?.statusCode}');
-      case DioExceptionType.cancel:
-        return Exception('请求被取消');
-      default:
-        return Exception('网络请求错误: ${e.message}');
+  // 获取用户统计信息
+  Future<Map<String, dynamic>> getUserStats(
+    String username, {
+    Request? request,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '${ApiConstants.userInfo}/$username/stats',
+        options: Options(headers: request?.toHeaders()),
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleError(e));
     }
+  }
+
+  // 更新用户资料
+  Future<Map<String, dynamic>> updateUserProfile({
+    required String oldUsername,
+    required String newUsername,
+    required String phone,
+    required String introduction,
+    String? avatar,
+    Request? request,
+  }) async {
+    try {
+      print('开始更新用户资料'); // 添加调试日志
+      print(
+          '参数: oldUsername=$oldUsername, newUsername=$newUsername, phone=$phone, introduction=$introduction, avatar=$avatar'); // 添加参数日志
+
+      // 创建FormData对象
+      final formData = FormData.fromMap({
+        'oldUsername': oldUsername,
+        'newUsername': newUsername,
+        'phone': phone,
+        'introduction': introduction,
+      });
+
+      // 如果有新头像，添加到FormData中
+      if (avatar != null) {
+        if (avatar.startsWith('/')) {
+          // 如果是本地文件路径
+          final file = File(avatar);
+          if (await file.exists()) {
+            formData.files.add(
+              MapEntry(
+                'avatar',
+                await MultipartFile.fromFile(
+                  avatar,
+                  filename: avatar.split('/').last,
+                ),
+              ),
+            );
+          } else {
+            print('头像文件不存在: $avatar');
+          }
+        } else {
+          // 如果是URL，直接作为字段传递
+          formData.fields.add(MapEntry('avatar', avatar));
+        }
+      }
+
+      print('发送请求数据: ${formData.fields}'); // 添加请求数据日志
+      if (formData.files.isNotEmpty) {
+        print(
+            '包含文件: ${formData.files.map((f) => f.value.filename).join(', ')}');
+      }
+
+      final response = await _dio.put(
+        ApiConstants.userProfile,
+        data: formData,
+        options: Options(
+          headers: request?.toHeaders(),
+          contentType: 'multipart/form-data',
+          sendTimeout: const Duration(seconds: 30), // 增加超时时间
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      );
+
+      print('更新用户资料响应: ${response.data}'); // 添加响应日志
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('更新失败: ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      print('更新用户资料失败: ${e.message}'); // 添加错误日志
+      print('错误类型: ${e.type}'); // 添加错误类型日志
+      if (e.response != null) {
+        print('错误响应: ${e.response?.data}'); // 添加错误响应日志
+      }
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      print('未知错误: $e'); // 添加未知错误日志
+      throw Exception('更新用户资料失败：$e');
+    }
+  }
+
+  // 更新用户标签
+  Future<Map<String, dynamic>> updateUserTags({
+    required String username,
+    required List<String> tags,
+    Request? request,
+  }) async {
+    try {
+      print('开始更新用户标签'); // 添加调试日志
+      // 将标签列表转换为逗号分隔的字符串，确保没有多余的空格
+      final tagsString = tags.map((tag) => tag.trim()).join(',');
+      print('标签字符串: $tagsString'); // 添加调试日志
+
+      final response = await _dio.put(
+        '${ApiConstants.userInfo}/$username/tags',
+        data: {'tags': tagsString},
+        options: Options(headers: request?.toHeaders()),
+      );
+      print('标签更新响应: ${response.data}'); // 添加调试日志
+
+      // 更新最新数据中的标签
+      if (_latestUserInfo != null) {
+        _latestUserInfo!['tags'] = tagsString;
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      print('标签更新失败: ${e.message}'); // 添加调试日志
+      throw Exception(ApiErrorHandler.handleError(e));
+    }
+  }
+
+  // 修改密码
+  Future<Map<String, dynamic>> updatePassword({
+    required String oldPassword,
+    required String newPassword,
+    Request? request,
+  }) async {
+    try {
+      print('开始修改密码'); // 添加调试日志
+      print(
+        '请求参数: oldPassword=$oldPassword, newPassword=$newPassword',
+      ); // 添加参数日志
+
+      final response = await _dio.put(
+        ApiConstants.userPassword,
+        queryParameters: {
+          'oldPassword': oldPassword,
+          'newPassword': newPassword,
+        },
+        options: Options(
+          headers: request?.toHeaders(),
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('密码修改响应状态码: ${response.statusCode}'); // 添加状态码日志
+      print('密码修改响应数据: ${response.data}'); // 添加响应数据日志
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception(response.data['message'] ?? '密码修改失败');
+      }
+    } on DioException catch (e) {
+      print('密码修改失败: ${e.message}'); // 添加错误日志
+      print('错误类型: ${e.type}'); // 添加错误类型日志
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      print('未知错误: $e'); // 添加未知错误日志
+      throw Exception('密码修改失败：$e');
+    }
+  }
+
+  // 获取用户的回答列表
+  Future<Map<String, dynamic>> getUserAnswers(
+    String username, {
+    Request? request,
+  }) async {
+    try {
+      print('开始获取用户回答列表'); // 添加调试日志
+      final response = await _dio.get(
+        '${ApiConstants.userActiveAnswers}?username=$username',
+        options: Options(headers: request?.toHeaders()),
+      );
+      print('获取用户回答列表成功: ${response.data}'); // 添加调试日志
+      return response.data;
+    } on DioException catch (e) {
+      print('获取用户回答列表失败: ${e.message}'); // 添加错误日志
+      throw Exception(ApiErrorHandler.handleError(e));
+    }
+  }
+
+  // 获取用户的问题列表
+  Future<Map<String, dynamic>> getUserQuestions(
+    String username, {
+    Request? request,
+  }) async {
+    try {
+      print('开始获取用户问题列表'); // 添加调试日志
+      final response = await _dio.get(
+        '${ApiConstants.userActiveQuestions}?username=$username',
+        options: Options(headers: request?.toHeaders()),
+      );
+      print('获取用户问题列表成功: ${response.data}'); // 添加调试日志
+      return response.data;
+    } on DioException catch (e) {
+      print('获取用户问题列表失败: ${e.message}'); // 添加错误日志
+      throw Exception(ApiErrorHandler.handleError(e));
+    }
+  }
+
+  // 清除缓存数据（用于测试）
+  static void clearCache() {
+    _latestUserInfo = null;
   }
 }

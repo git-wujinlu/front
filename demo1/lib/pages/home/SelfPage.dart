@@ -3,6 +3,8 @@ import 'package:demo1/pages/home/SettingsPage.dart';
 import 'package:demo1/pages/home/ProfilePage.dart';
 import 'package:demo1/pages/home/MyQuestionsPage.dart';
 import 'package:demo1/pages/home/MyAnswersPage.dart';
+import '../../services/user_service.dart';
+import '../../models/request_model.dart';
 
 class SelfPage extends StatefulWidget {
   const SelfPage({super.key});
@@ -14,8 +16,87 @@ class SelfPage extends StatefulWidget {
 }
 
 class _SelfPageState extends State<SelfPage> {
+  final UserService _userService = UserService();
+  bool _isLoading = true;
+  String? _error;
+  Map<String, dynamic>? _userInfo;
+  List<String> _tags = [];
+  Map<String, dynamic>? _stats;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final request = Request(
+        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
+        username: 'wjy',
+      );
+
+      // 使用用户名获取用户信息
+      final userResponse = await _userService.getUserByUsername(
+        'wjy',
+        request: request,
+      );
+      final userData = userResponse['data'];
+
+      // 从用户信息中获取标签字符串并转换为列表
+      final tagsString = userData['tags'] as String? ?? '';
+      final tagsList =
+          tagsString.isNotEmpty
+              ? tagsString.split(',').map((e) => e.trim()).toList()
+              : <String>[];
+
+      // 获取用户统计信息
+      final statsResponse = await _userService.getUserStats(
+        'wjy',
+        request: request,
+      );
+
+      setState(() {
+        _userInfo = userData;
+        _tags = tagsList;
+        _stats = statsResponse['data'];
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('加载用户数据失败: $e');
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(_error!),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _loadUserData, child: const Text('重试')),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('个人中心'),
@@ -65,7 +146,8 @@ class _SelfPageState extends State<SelfPage> {
                     CircleAvatar(
                       radius: 40,
                       backgroundImage: NetworkImage(
-                        'https://via.placeholder.com/150',
+                        _userInfo?['avatar'] ??
+                            'https://via.placeholder.com/150',
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -74,7 +156,7 @@ class _SelfPageState extends State<SelfPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '陈某某',
+                            _userInfo?['username'] ?? '未设置用户名',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -82,18 +164,9 @@ class _SelfPageState extends State<SelfPage> {
                                   Theme.of(context).textTheme.bodyLarge?.color,
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 8),
                           Text(
-                            '北京航空航天大学 计算机科学与技术 大三学生',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color:
-                                  Theme.of(context).textTheme.bodyMedium?.color,
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            '积分：1280',
+                            '有用回答：${_userInfo?['usefulCount'] ?? 0}',
                             style: TextStyle(
                               fontSize: 14,
                               color: Theme.of(context).primaryColor,
@@ -107,95 +180,28 @@ class _SelfPageState extends State<SelfPage> {
               ),
             ),
             // 我的标签部分
-            Container(
-              margin: const EdgeInsets.only(bottom: 16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 1,
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20.0,
-                  horizontal: 16.0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '我的标签',
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8.0,
-                      runSpacing: 4.0,
-                      children: [
-                        Chip(
-                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
-                          label: const Text('算法'),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.8),
-                          labelStyle: const TextStyle(color: Colors.white),
-                        ),
-                        Chip(
-                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
-                          label: const Text('机器学习'),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.8),
-                          labelStyle: const TextStyle(color: Colors.white),
-                        ),
-                        Chip(
-                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
-                          label: const Text('Python'),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.8),
-                          labelStyle: const TextStyle(color: Colors.white),
-                        ),
-                        Chip(
-                          side: BorderSide(color: Theme.of(context).cardTheme.color as Color),
-                          label: const Text('Web 开发'),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.8),
-                          labelStyle: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            _buildTagsSection(),
             // 功能按钮部分
             _buildFunctionButton(
               icon: Icons.account_circle,
               title: '个人资料',
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ProfilePage()),
                 );
+
+                // 如果返回true，说明数据已更新，需要刷新
+                if (result == true) {
+                  _loadUserData();
+                }
               },
             ),
             const SizedBox(height: 16),
             _buildFunctionButton(
               icon: Icons.comment,
               title: '我的回答',
-              trailing: '38条',
+              trailing: '${_stats?['answers'] ?? 0}条',
               onTap: () {
                 Navigator.push(
                   context,
@@ -209,7 +215,7 @@ class _SelfPageState extends State<SelfPage> {
             _buildFunctionButton(
               icon: Icons.question_answer,
               title: '我的提问',
-              trailing: '2条',
+              trailing: '${_stats?['questions'] ?? 0}条',
               onTap: () {
                 Navigator.push(
                   context,
@@ -218,6 +224,59 @@ class _SelfPageState extends State<SelfPage> {
                   ),
                 );
               },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagsSection() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '我的标签',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: 8.0,
+              children:
+                  _tags
+                      .map(
+                        (tag) => Chip(
+                          label: Text(tag),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).primaryColor.withOpacity(0.1),
+                          labelStyle: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
+                      )
+                      .toList(),
             ),
           ],
         ),

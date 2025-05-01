@@ -19,9 +19,10 @@ class _CommentPageState extends State<CommentPage> {
     final width = size.width;
 
     return Scaffold(
-      backgroundColor:Theme.of(context).textTheme.bodyLarge?.color == Colors.white
-        ? Colors.black
-        : Colors.white,
+      backgroundColor:
+          Theme.of(context).textTheme.bodyLarge?.color == Colors.white
+              ? Colors.black
+              : Colors.white,
       body: Column(
         children: [
           Container(
@@ -37,16 +38,17 @@ class _CommentPageState extends State<CommentPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    icon:  Icon(Icons.close,
-                        color: Theme.of(context).textTheme.bodyLarge?.color
-                    ), // 图标设置成白色
+                    icon: Icon(Icons.close,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyLarge
+                            ?.color), // 图标设置成白色
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
           ),
-
 
           // 往下25%：浅灰色背景
           Container(
@@ -59,11 +61,12 @@ class _CommentPageState extends State<CommentPage> {
             child: Container(
               color: Theme.of(context).cardTheme.color,
               child: Center(
-              child: Text(
-                widget.fromQuestion ? '请对回答者做出评价~' : '请对提问者做出评价~',
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                child: Text(
+                  widget.fromQuestion ? '请对回答者做出评价~' : '请对提问者做出评价~',
+                  style: const TextStyle(
+                      fontSize: 22, fontWeight: FontWeight.bold),
+                ),
               ),
-            ),
             ),
           ),
           Container(
@@ -107,11 +110,9 @@ class _CommentPageState extends State<CommentPage> {
             ),
           ),
 
-
           Container(
             height: 0.03 * height,
             color: Theme.of(context).cardTheme.color,
-
           ),
           // 往下5%：确定取消按钮
 
@@ -132,16 +133,17 @@ class _CommentPageState extends State<CommentPage> {
                     Navigator.pop(context);
                     Navigator.pop(context);
                   },
-                  child: Text('确定', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
+                  child: Text('确定',
+                      style: TextStyle(
+                          color: Theme.of(context).textTheme.bodyLarge?.color)),
+                ),
               ),
             ),
-          ),
           ),
           // 往下40%：浅灰色背景
           Expanded(
             child: Container(
               color: Theme.of(context).cardTheme.color,
-
             ),
           ),
         ],
