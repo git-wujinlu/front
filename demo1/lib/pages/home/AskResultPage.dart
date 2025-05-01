@@ -37,8 +37,8 @@ class _AskResultPageState extends State<AskResultPage> {
   Future<List<dynamic>> search(String s) async {
     final prefs = await SharedPreferences.getInstance();
     var headers = {
-      'token': prefs.getString('token')??'',
-      'username': prefs.getString('username')??'',
+      'token': prefs.getString('token') ?? '',
+      'username': prefs.getString('username') ?? '',
       'Content-Type': 'application/json',
     };
     print(headers);
@@ -191,13 +191,20 @@ class _AskResultPageState extends State<AskResultPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 ClipOval(
-                                  child: Image.asset(
-                                    snapshot.data?[index]['avatar'] ??
-                                        'assets/img.png',
-                                    width: 0.12 * width,
-                                    height: 0.12 * width,
-                                    fit: BoxFit.fill,
-                                  ),
+                                  child:
+                                      (snapshot.data?[index]['avatar'] == null)
+                                          ? Image.asset(
+                                            'assets/img.png',
+                                            width: 0.12 * width,
+                                            height: 0.12 * width,
+                                            fit: BoxFit.fill,
+                                          )
+                                          : Image.network(
+                                            snapshot.data?[index]['avatar'],
+                                            width: 0.12 * width,
+                                            height: 0.12 * width,
+                                            fit: BoxFit.fill,
+                                          ),
                                 ),
                                 SizedBox(width: 0.03 * width),
                                 Column(
@@ -272,7 +279,36 @@ class _AskResultPageState extends State<AskResultPage> {
               child: Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.pop(context);
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: Text(_searchController.text),
+                          content: TextField(),
+                          actions: [
+                            TextButton(
+                              child: Text(
+                                '取消',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context, "取消");
+                              },
+                            ),
+                            TextButton(
+                              child: Text(
+                                '确定',
+                                style: TextStyle(color: Colors.blue),
+                              ),
+                              onPressed: () {
+                                Navigator.pop(context, "确定");
+                              },
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                    // Navigator.pop(context);
                   },
                   child: Container(
                     height: 0.04 * height,
