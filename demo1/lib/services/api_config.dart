@@ -23,25 +23,15 @@ class ApiConfig {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          // 在请求发送前处理，比如添加token
+          print('发送请求: ${options.uri}'); // 添加请求日志
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          // 在响应返回时处理
-          if (response.statusCode == 200) {
-            return handler.next(response);
-          } else {
-            return handler.reject(
-              DioException(
-                requestOptions: response.requestOptions,
-                response: response,
-                type: DioExceptionType.badResponse,
-              ),
-            );
-          }
+          print('收到响应: ${response.data}'); // 添加响应日志
+          return handler.next(response);
         },
         onError: (DioException e, handler) {
-          // 处理错误
+          print('请求错误: ${e.message}'); // 添加错误日志
           final errorMessage = ApiErrorHandler.handleError(e);
           return handler.reject(
             DioException(

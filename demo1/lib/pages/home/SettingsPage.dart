@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:demo1/providers/theme_provider.dart';
+import 'package:demo1/services/user_service.dart';
+import 'package:demo1/models/request_model.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -216,66 +218,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildSecurityTile() {
-    return Column(
-      children: [
-        ListTile(
-          leading: Icon(Icons.security, color: Theme.of(context).primaryColor),
-          title: Text(
-            '账号安全',
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-          trailing: Icon(
-            _isSecurityExpanded
-                ? Icons.keyboard_arrow_up
-                : Icons.keyboard_arrow_down,
-            color: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.color?.withOpacity(0.5),
-          ),
-          onTap: () {
-            setState(() {
-              _isSecurityExpanded = !_isSecurityExpanded;
-            });
-          },
-        ),
-        AnimatedCrossFade(
-          firstChild: const SizedBox.shrink(),
-          secondChild: Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _buildSecurityItem(
-                  icon: Icons.lock,
-                  title: '修改密码',
-                  onTap: () {
-                    print('修改密码');
-                  },
-                ),
-                const SizedBox(height: 12),
-                _buildSecurityItem(
-                  icon: Icons.email,
-                  title: '绑定邮箱',
-                  subtitle: '已绑定：exa****@example.com',
-                  onTap: () {
-                    print('绑定邮箱');
-                  },
-                ),
-              ],
-            ),
-          ),
-          crossFadeState:
-              _isSecurityExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-          duration: const Duration(milliseconds: 300),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSecurityItem({
     required IconData icon,
     required String title,
@@ -324,6 +266,199 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final _oldPasswordController = TextEditingController();
+    final _newPasswordController = TextEditingController();
+    final _confirmPasswordController = TextEditingController();
+    final _userService = UserService();
+    bool _isLoading = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  title: const Text('修改密码'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: _oldPasswordController,
+                        decoration: const InputDecoration(
+                          labelText: '旧密码',
+                          border: OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        enabled: !_isLoading,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _newPasswordController,
+                        decoration: const InputDecoration(
+                          labelText: '新密码',
+                          border: OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        enabled: !_isLoading,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _confirmPasswordController,
+                        decoration: const InputDecoration(
+                          labelText: '确认新密码',
+                          border: OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        enabled: !_isLoading,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () {
+                                Navigator.of(context).pop();
+                              },
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed:
+                          _isLoading
+                              ? null
+                              : () async {
+                                // 只检查新密码是否一致
+                                if (_newPasswordController.text !=
+                                    _confirmPasswordController.text) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('两次输入的新密码不一致'),
+                                    ),
+                                  );
+                                  return;
+                                }
+
+                                // 检查新密码是否为空
+                                if (_newPasswordController.text.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('新密码不能为空')),
+                                  );
+                                  return;
+                                }
+
+                                setDialogState(() {
+                                  _isLoading = true;
+                                });
+
+                                try {
+                                  final request = Request(
+                                    token:
+                                        '9d83504a-5d28-4dca-a034-374c569e17d0',
+                                    username: 'wjy',
+                                  );
+
+                                  final result = await _userService
+                                      .updatePassword(
+                                        oldPassword:
+                                            _oldPasswordController.text,
+                                        newPassword:
+                                            _newPasswordController.text,
+                                        request: request,
+                                      )
+                                      .timeout(
+                                        const Duration(seconds: 10),
+                                        onTimeout: () {
+                                          throw Exception('请求超时，请重试');
+                                        },
+                                      );
+
+                                  if (!mounted) return;
+
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('密码修改成功')),
+                                  );
+                                } catch (e) {
+                                  if (!mounted) return;
+
+                                  print('密码修改错误: $e');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('密码修改失败：$e')),
+                                  );
+                                  setDialogState(() {
+                                    _isLoading = false;
+                                  });
+                                }
+                              },
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : const Text('确认'),
+                    ),
+                  ],
+                ),
+          ),
+    );
+  }
+
+  Widget _buildSecurityTile() {
+    return Column(
+      children: [
+        ListTile(
+          leading: Icon(Icons.security, color: Theme.of(context).primaryColor),
+          title: Text(
+            '账号安全',
+            style: TextStyle(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
+          trailing: Icon(
+            _isSecurityExpanded
+                ? Icons.keyboard_arrow_up
+                : Icons.keyboard_arrow_down,
+            color: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.color?.withOpacity(0.5),
+          ),
+          onTap: () {
+            setState(() {
+              _isSecurityExpanded = !_isSecurityExpanded;
+            });
+          },
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox.shrink(),
+          secondChild: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildSecurityItem(
+                  icon: Icons.lock,
+                  title: '修改密码',
+                  onTap: _showChangePasswordDialog,
+                ),
+              ],
+            ),
+          ),
+          crossFadeState:
+              _isSecurityExpanded
+                  ? CrossFadeState.showSecond
+                  : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 300),
+        ),
+      ],
     );
   }
 }
