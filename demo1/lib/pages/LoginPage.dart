@@ -392,7 +392,10 @@ class _LoginPageState extends State<LoginPage> {
                           hintText: '邮箱',
                           prefixIcon: Icon(
                             Icons.mail,
-                            color: Theme.of(context).iconTheme.color,
+                            color:
+                                mailChecked || nowPage == 0
+                                    ? Theme.of(context).iconTheme.color
+                                    : Colors.red,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(Icons.clear),
