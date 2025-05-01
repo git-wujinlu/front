@@ -55,10 +55,14 @@ class _AskPageState extends State<AskPage> {
       body: SafeArea(
         child: Column(
           children: [
-            Container(height: 0.1 * height),
+            // Container(height: 0.1 * height),
             Container(
-              height: 0.2 * height,
-              child: Center(child: Text("这里放个logo")),
+              padding: EdgeInsets.only(
+                bottom: 0.05 * height,
+                top: 0.05 * height,
+              ),
+              height: 0.3 * height,
+              child: Center(child: Image.asset('assets/logo1.png')),
             ),
             Container(
               width: 0.95 * width,

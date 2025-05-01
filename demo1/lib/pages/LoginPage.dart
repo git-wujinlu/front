@@ -205,6 +205,10 @@ class _LoginPageState extends State<LoginPage> {
                           s.compareTo(_passwordCheckController.text) == 0;
                     });
                   },
+                  onSubmitted: (String s) {
+                    _passwordController.text = s;
+                    if (nowPage == 0) login();
+                  },
                   textAlignVertical: TextAlignVertical.center,
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -415,6 +419,10 @@ class _LoginPageState extends State<LoginPage> {
                             child: TextField(
                               textAlignVertical: TextAlignVertical.center,
                               controller: _codeController,
+                              onSubmitted: (String s) {
+                                _codeController.text = s;
+                                signUp();
+                              },
                               decoration: InputDecoration(
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(20),
