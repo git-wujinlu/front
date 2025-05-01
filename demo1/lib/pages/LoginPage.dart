@@ -439,7 +439,7 @@ class _LoginPageState extends State<LoginPage> {
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState ==
                                         ConnectionState.waiting) {
-                                      return CircularProgressIndicator();
+                                      return Text('');
                                     } else {
                                       return Image.memory(snapshot.data!);
                                     }

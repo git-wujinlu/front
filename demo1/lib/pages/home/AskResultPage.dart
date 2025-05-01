@@ -22,6 +22,7 @@ class _AskResultPageState extends State<AskResultPage> {
   Future<List<dynamic>>? _searchList;
 
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _contentController = TextEditingController();
 
   _AskResultPageState({required this.searchString});
 
@@ -255,8 +256,18 @@ class _AskResultPageState extends State<AskResultPage> {
                       context: context,
                       builder: (context) {
                         return AlertDialog(
-                          title: Text(_searchController.text),
-                          content: TextField(),
+                          title: Text('标题：${_searchController.text}'),
+                          content: Container(
+                            width: 0.8 * width,
+                            child: TextField(
+                              controller: _contentController,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                labelText: '问题详情',
+                              ),
+                              maxLines: null,
+                            ),
+                          ),
                           actions: [
                             TextButton(
                               child: Text(
@@ -264,7 +275,7 @@ class _AskResultPageState extends State<AskResultPage> {
                                 style: TextStyle(color: Colors.grey),
                               ),
                               onPressed: () {
-                                Navigator.pop(context, "取消");
+                                Navigator.pop(context);
                               },
                             ),
                             TextButton(
@@ -272,15 +283,19 @@ class _AskResultPageState extends State<AskResultPage> {
                                 '确定',
                                 style: TextStyle(color: Colors.blue),
                               ),
-                              onPressed: () {
-                                Navigator.pop(context, "确定");
+                              onPressed: () async{
+                                if (await _askService.askQuestion(
+                                    _searchController.text,
+                                    _contentController.text)) {
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                }
                               },
                             ),
                           ],
                         );
                       },
                     );
-                    // Navigator.pop(context);
                   },
                   child: Container(
                     height: 0.04 * height,
