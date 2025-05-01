@@ -35,17 +35,8 @@ class _SelfPageState extends State<SelfPage> {
         _isLoading = true;
         _error = null;
       });
-
-      final request = Request(
-        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
-        username: 'wjy',
-      );
-
       // 使用用户名获取用户信息
-      final userResponse = await _userService.getUserByUsername(
-        'wjy',
-        request: request,
-      );
+      final userResponse = await _userService.getUserByUsername();
       final userData = userResponse['data'];
 
       // 从用户信息中获取标签字符串并转换为列表
@@ -56,15 +47,11 @@ class _SelfPageState extends State<SelfPage> {
               : <String>[];
 
       // 获取用户统计信息
-      final statsResponse = await _userService.getUserStats(
-        'wjy',
-        request: request,
-      );
-
+      // final statsResponse = await _userService.getUserStats();
       setState(() {
         _userInfo = userData;
         _tags = tagsList;
-        _stats = statsResponse['data'];
+        // _stats = statsResponse['data'];
         _isLoading = false;
       });
     } catch (e) {

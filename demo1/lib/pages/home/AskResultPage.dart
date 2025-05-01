@@ -1,9 +1,6 @@
-import 'dart:convert';
-
+import 'package:demo1/services/ask_service.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../providers/theme_provider.dart';
 
@@ -19,7 +16,7 @@ class AskResultPage extends StatefulWidget {
 }
 
 class _AskResultPageState extends State<AskResultPage> {
-  int state = 0;
+  final AskService _askService = new AskService();
   var selectedList = List.filled(10, false);
   final String searchString;
   Future<List<dynamic>>? _searchList;
@@ -34,31 +31,9 @@ class _AskResultPageState extends State<AskResultPage> {
     });
   }
 
-  Future<List<dynamic>> search(String s) async {
-    final prefs = await SharedPreferences.getInstance();
-    var headers = {
-      'token': prefs.getString('token') ?? '',
-      'username': prefs.getString('username') ?? '',
-      'Content-Type': 'application/json',
-    };
-    print(headers);
-    var response = await http.post(
-      Uri.parse('http://192.168.107.1:4999/recommend'),
-      headers: headers,
-      body: json.encode({"question": s}),
-    );
-    if (response.statusCode == 200) {
-      state = 1;
-      return jsonDecode(response.body);
-    } else {
-      print("error");
-    }
-    return [];
-  }
-
   @override
   void initState() {
-    _searchList = search(searchString);
+    _searchList = _askService.search(searchString);
     _searchController.text = searchString;
     super.initState();
   }
@@ -81,10 +56,9 @@ class _AskResultPageState extends State<AskResultPage> {
               right: 0.015 * width,
             ),
             decoration: BoxDecoration(
-              color:
-                  themeProvider.isDarkMode
-                      ? Colors.grey[600]
-                      : Colors.grey[400],
+              color: themeProvider.isDarkMode
+                  ? Colors.grey[600]
+                  : Colors.grey[400],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(a[i]),
@@ -109,7 +83,7 @@ class _AskResultPageState extends State<AskResultPage> {
                     Navigator.pop(context);
                   }
                   setState(() {
-                    _searchList = search(s);
+                    _searchList = _askService.search(s);
                   });
                 },
                 controller: _searchController,
@@ -128,7 +102,8 @@ class _AskResultPageState extends State<AskResultPage> {
                         Navigator.pop(context);
                       }
                       setState(() {
-                        _searchList = search(_searchController.text);
+                        _searchList =
+                            _askService.search(_searchController.text);
                       });
                     },
                   ),
@@ -158,20 +133,18 @@ class _AskResultPageState extends State<AskResultPage> {
                           onTap: () => select(index),
                           child: Container(
                             decoration: BoxDecoration(
-                              color:
-                                  (selectedList[index] == false)
-                                      ? themeProvider.isDarkMode
-                                          ? Theme.of(context).cardTheme.color
-                                          : Colors.white
-                                      : themeProvider.isDarkMode
+                              color: (selectedList[index] == false)
+                                  ? themeProvider.isDarkMode
+                                      ? Theme.of(context).cardTheme.color
+                                      : Colors.white
+                                  : themeProvider.isDarkMode
                                       ? Colors.deepPurple.shade600
                                       : Colors.deepPurple.shade100,
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
-                                color:
-                                    themeProvider.isDarkMode
-                                        ? Colors.grey.shade700
-                                        : Colors.grey.shade300,
+                                color: themeProvider.isDarkMode
+                                    ? Colors.grey.shade700
+                                    : Colors.grey.shade300,
                               ),
                             ),
                             padding: EdgeInsets.only(
@@ -194,17 +167,17 @@ class _AskResultPageState extends State<AskResultPage> {
                                   child:
                                       (snapshot.data?[index]['avatar'] == null)
                                           ? Image.asset(
-                                            'assets/img.png',
-                                            width: 0.12 * width,
-                                            height: 0.12 * width,
-                                            fit: BoxFit.fill,
-                                          )
+                                              'assets/img.png',
+                                              width: 0.12 * width,
+                                              height: 0.12 * width,
+                                              fit: BoxFit.fill,
+                                            )
                                           : Image.network(
-                                            snapshot.data?[index]['avatar'],
-                                            width: 0.12 * width,
-                                            height: 0.12 * width,
-                                            fit: BoxFit.fill,
-                                          ),
+                                              snapshot.data?[index]['avatar'],
+                                              width: 0.12 * width,
+                                              height: 0.12 * width,
+                                              fit: BoxFit.fill,
+                                            ),
                                 ),
                                 SizedBox(width: 0.03 * width),
                                 Column(
@@ -251,8 +224,7 @@ class _AskResultPageState extends State<AskResultPage> {
                                       ),
                                       Text(
                                         snapshot.data?[index]['like_count']
-                                                .toString()
-                                            as String,
+                                            .toString() as String,
                                         style: TextStyle(
                                           color: Colors.red,
                                           fontSize: 16,

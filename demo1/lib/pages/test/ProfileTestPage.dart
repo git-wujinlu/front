@@ -34,15 +34,12 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
         _error = null;
       });
 
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );
 
-      final userResponse = await _userService.getUserByUsername(
-        'wjy',
-        request: request,
-      );
+      final userResponse = await _userService.getUserByUsername();
       final userData = userResponse['data'];
 
       final tagsString = userData['tags'] as String? ?? '';
@@ -74,7 +71,7 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
         _error = null;
       });
 
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );
@@ -84,7 +81,6 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
         newUsername: _usernameController.text,
         phone: _phoneController.text,
         introduction: _introductionController.text,
-        request: request,
       );
 
       setState(() {
@@ -122,7 +118,7 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
     }
 
     try {
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );
@@ -132,7 +128,6 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
       await _userService.updateUserTags(
         username: _userInfo?['username'] ?? '',
         tags: newTags,
-        request: request,
       );
 
       UserService.clearCache();
@@ -156,7 +151,7 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
 
   Future<void> _removeTag(String tag) async {
     try {
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );
@@ -166,7 +161,6 @@ class _ProfileTestPageState extends State<ProfileTestPage> {
       await _userService.updateUserTags(
         username: _userInfo?['username'] ?? '',
         tags: newTags,
-        request: request,
       );
 
       UserService.clearCache();

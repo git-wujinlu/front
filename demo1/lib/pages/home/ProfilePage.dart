@@ -39,16 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _isLoading = true;
         _error = null;
       });
-
-      final request = Request(
-        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
-        username: 'wjy',
-      );
-
-      final response = await _userService.getUserByUsername(
-        'wjy',
-        request: request,
-      );
+      final response = await _userService.getUserByUsername();
       final userData = response['data'];
 
       final tagsString = userData['tags'] as String? ?? '';
@@ -133,16 +124,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _saveUserInfo() async {
     if (_isLoading) return; // 防止重复保存
 
+    print(1);
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
-
-      final request = Request(
-        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
-        username: 'wjy',
-      );
 
       print('开始保存用户信息'); // 添加调试日志
 
@@ -153,7 +140,6 @@ class _ProfilePageState extends State<ProfilePage> {
         phone: _phoneController.text,
         introduction: _bioController.text,
         avatar: _selectedImage?.path ?? _avatarUrl,
-        request: request,
       );
 
       print('用户基本信息更新成功: $result'); // 添加调试日志
@@ -162,7 +148,6 @@ class _ProfilePageState extends State<ProfilePage> {
       await _userService.updateUserTags(
         username: _oldUsername ?? '',
         tags: _tags,
-        request: request,
       );
 
       print('标签更新成功'); // 添加调试日志

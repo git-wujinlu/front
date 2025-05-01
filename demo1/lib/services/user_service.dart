@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../models/request_model.dart';
 import '../utils/api_error_handler.dart';
@@ -7,19 +12,78 @@ import 'dart:io';
 
 class UserService {
   final Dio _dio;
+  String? CaptchaOwner;
+
   // 添加静态变量用于存储最新的用户信息
   static Map<String, dynamic>? _latestUserInfo;
 
   UserService() : _dio = MockService.dio {
     // 在构造函数中设置 mock 拦截器
-    MockService.setupMockInterceptors();
+    // MockService.setupMockInterceptors();
+  }
+
+  // 获取登录验证码
+  Future<Uint8List> captcha() async {
+    final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.captcha}'),
+        headers: await RequestModel.getHeaders());
+    CaptchaOwner = response.headers['set-cookie']!
+        .substring(0, response.headers['set-cookie']!.indexOf(';'));
+    print(response.headers);
+    return response.bodyBytes;
+  }
+
+  // 登录
+  Future<bool> login(String username, String password, String code) async {
+    Map<String, String> headers = await RequestModel.getHeaders();
+    headers['cookie'] = CaptchaOwner!;
+    print(headers);
+    final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.login}'),
+        body: json.encode({
+          "username": username,
+          "password": password,
+          "code": code,
+        }),
+        headers: headers);
+    if (response.statusCode == 200) {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString('token', jsonDecode(response.body)['data']['token']);
+      prefs.setString('username', username);
+      return (true);
+    } else {
+      return (false);
+    }
+  }
+
+  // 验证码
+  void sendCode(String mail) async {
+    final response = await http.get(Uri.parse(
+        '${ApiConstants.baseUrl}${ApiConstants.sendCode}?mail=$mail'));
+    print(jsonDecode(response.body)['success']);
+  }
+
+  // 注册
+  Future<bool> signUp(
+      String username, String password, String mail, String code) async {
+    final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.user}'),
+        body: json.encode({
+          "username": username,
+          "password": password,
+          "mail": mail,
+          "code": code,
+        }),
+        headers: await RequestModel.getHeaders());
+    if (jsonDecode(response.body)['success'] == true) {
+      return (true);
+    } else {
+      return (false);
+    }
   }
 
   // 获取用户信息（通过用户名）
-  Future<Map<String, dynamic>> getUserByUsername(
-    String username, {
-    Request? request,
-  }) async {
+  Future<Map<String, dynamic>> getUserByUsername() async {
     try {
       // 如果有最新数据，直接返回
       if (_latestUserInfo != null) {
@@ -30,10 +94,11 @@ class UserService {
           'success': true,
         };
       }
-
+      final prefs = await SharedPreferences.getInstance();
       final response = await _dio.get(
-        ApiConstants.userInfo.replaceAll('{username}', username),
-        options: Options(headers: request?.toHeaders()),
+        ApiConstants.userInfo
+            .replaceAll('{username}', prefs.getString('username')!),
+        options: Options(headers: await RequestModel.getHeaders()),
       );
 
       // 更新最新数据
@@ -47,11 +112,11 @@ class UserService {
   // 获取用户标签
   Future<Map<String, dynamic>> getUserTags(
     String username, {
-    Request? request,
+    RequestModel? request,
   }) async {
     try {
       // 使用getUserByUsername获取用户信息，然后从用户信息中提取标签
-      final userInfo = await getUserByUsername(username, request: request);
+      final userInfo = await getUserByUsername();
       final tagsString = userInfo['data']['tags'] as String? ?? '';
       final tagsList = tagsString.isNotEmpty
           ? tagsString.split(',').map((e) => e.trim()).toList()
@@ -64,14 +129,12 @@ class UserService {
   }
 
   // 获取用户统计信息
-  Future<Map<String, dynamic>> getUserStats(
-    String username, {
-    Request? request,
-  }) async {
+  Future<Map<String, dynamic>> getUserStats() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
       final response = await _dio.get(
-        '${ApiConstants.userInfo}/$username/stats',
-        options: Options(headers: request?.toHeaders()),
+        '${ApiConstants.userInfo}/${prefs.getString('username')}/stats',
+        options: Options(headers: await RequestModel.getHeaders()),
       );
       return response.data;
     } on DioException catch (e) {
@@ -86,7 +149,6 @@ class UserService {
     required String phone,
     required String introduction,
     String? avatar,
-    Request? request,
   }) async {
     try {
       print('开始更新用户资料'); // 添加调试日志
@@ -135,7 +197,7 @@ class UserService {
         ApiConstants.userProfile,
         data: formData,
         options: Options(
-          headers: request?.toHeaders(),
+          headers: await RequestModel.getHeaders(),
           contentType: 'multipart/form-data',
           sendTimeout: const Duration(seconds: 30), // 增加超时时间
           receiveTimeout: const Duration(seconds: 30),
@@ -166,7 +228,6 @@ class UserService {
   Future<Map<String, dynamic>> updateUserTags({
     required String username,
     required List<String> tags,
-    Request? request,
   }) async {
     try {
       print('开始更新用户标签'); // 添加调试日志
@@ -177,7 +238,7 @@ class UserService {
       final response = await _dio.put(
         '${ApiConstants.userInfo}/$username/tags',
         data: {'tags': tagsString},
-        options: Options(headers: request?.toHeaders()),
+        options: Options(headers: await RequestModel.getHeaders()),
       );
       print('标签更新响应: ${response.data}'); // 添加调试日志
 
@@ -197,7 +258,7 @@ class UserService {
   Future<Map<String, dynamic>> updatePassword({
     required String oldPassword,
     required String newPassword,
-    Request? request,
+    RequestModel? request,
   }) async {
     try {
       print('开始修改密码'); // 添加调试日志
@@ -238,7 +299,7 @@ class UserService {
   // 获取用户的回答列表
   Future<Map<String, dynamic>> getUserAnswers(
     String username, {
-    Request? request,
+    RequestModel? request,
   }) async {
     try {
       print('开始获取用户回答列表'); // 添加调试日志
@@ -257,7 +318,7 @@ class UserService {
   // 获取用户的问题列表
   Future<Map<String, dynamic>> getUserQuestions(
     String username, {
-    Request? request,
+    RequestModel? request,
   }) async {
     try {
       print('开始获取用户问题列表'); // 添加调试日志

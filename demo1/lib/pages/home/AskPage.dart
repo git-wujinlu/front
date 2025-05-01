@@ -1,6 +1,8 @@
 import 'package:demo1/pages/home/AskResultPage.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
+import '../../models/request_model.dart';
 
 import 'ConversationPage.dart';
 
@@ -20,9 +22,8 @@ class _AskPageState extends State<AskPage> {
     }
     return Navigator.of(context).push(
       PageRouteBuilder(
-        pageBuilder:
-            (context, animation, secondaryAnimation) =>
-                AskResultPage(searchString: s),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            AskResultPage(searchString: s),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(0.0, 0.3);
           const end = Offset.zero;
@@ -55,14 +56,18 @@ class _AskPageState extends State<AskPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Container(height: 0.1 * height),
-            Container(
-              padding: EdgeInsets.only(
-                bottom: 0.05 * height,
-                top: 0.05 * height,
+            GestureDetector(
+              onTap: () async {
+                print(await RequestModel.getHeaders());
+              },
+              child: Container(
+                padding: EdgeInsets.only(
+                  bottom: 0.05 * height,
+                  top: 0.05 * height,
+                ),
+                height: 0.3 * height,
+                child: Center(child: Image.asset('assets/logo1.png')),
               ),
-              height: 0.3 * height,
-              child: Center(child: Image.asset('assets/logo1.png')),
             ),
             Container(
               width: 0.95 * width,
@@ -108,9 +113,8 @@ class _AskPageState extends State<AskPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder:
-                              (context) =>
-                                  const ConversationPage(fromQuestion: false),
+                          builder: (context) =>
+                              const ConversationPage(fromQuestion: false),
                         ),
                       );
                     },

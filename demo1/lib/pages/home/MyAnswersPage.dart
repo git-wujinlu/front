@@ -30,7 +30,7 @@ class _MyAnswersPageState extends State<MyAnswersPage> {
         _error = null;
       });
 
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );

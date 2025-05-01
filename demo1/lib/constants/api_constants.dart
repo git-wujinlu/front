@@ -11,6 +11,10 @@ class ApiConstants {
   static const String userPassword = '$user/password';
   static const String userActiveAnswers = '$user/active_answers';
   static const String userActiveQuestions = '$user/active_questions';
+  static const String login = '$user/login';
+  static const String logout = '$user/logout';
+  static const String sendCode = '$user/send-code';
+  static const String captcha = '$user/captcha';
 
   // 问答相关接口
   static const String questions = '/api/hangzd/questions';
@@ -26,8 +30,6 @@ class ApiConstants {
 
   // 认证相关
   static const String auth = '/api/hangzd/auth';
-  static const String login = '$auth/login';
-  static const String logout = '$auth/logout';
   static const String refreshToken = '$auth/refresh';
 
   // 请求配置

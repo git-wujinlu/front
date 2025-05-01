@@ -37,15 +37,12 @@ class _ProfileSyncTestPageState extends State<ProfileSyncTestPage> {
         _error = null;
       });
 
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );
 
-      final userResponse = await _userService.getUserByUsername(
-        'wjy',
-        request: request,
-      );
+      final userResponse = await _userService.getUserByUsername();
       final userData = userResponse['data'];
 
       final tagsString = userData['tags'] as String? ?? '';
@@ -77,7 +74,7 @@ class _ProfileSyncTestPageState extends State<ProfileSyncTestPage> {
         _error = null;
       });
 
-      final request = Request(
+      final request = RequestModel(
         token: '9d83504a-5d28-4dca-a034-374c569e17d0',
         username: 'wjy',
       );
@@ -87,7 +84,6 @@ class _ProfileSyncTestPageState extends State<ProfileSyncTestPage> {
         newUsername: _usernameController.text,
         phone: _phoneController.text,
         introduction: _introductionController.text,
-        request: request,
       );
 
       setState(() {
@@ -149,10 +145,6 @@ class _ProfileSyncTestPageState extends State<ProfileSyncTestPage> {
       final result = await _userService.updateUserTags(
         username: _userInfo?['username'] ?? '',
         tags: _tags,
-        request: Request(
-          token: '9d83504a-5d28-4dca-a034-374c569e17d0',
-          username: 'wjy',
-        ),
       );
       print('标签保存响应: $result');
 
