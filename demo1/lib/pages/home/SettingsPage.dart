@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:demo1/providers/theme_provider.dart';
 import 'package:demo1/services/user_service.dart';
 import 'package:demo1/models/request_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -279,137 +280,144 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder:
-          (context) => StatefulBuilder(
-            builder:
-                (context, setDialogState) => AlertDialog(
-                  title: const Text('修改密码'),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextField(
-                        controller: _oldPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: '旧密码',
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                        enabled: !_isLoading,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _newPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: '新密码',
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                        enabled: !_isLoading,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _confirmPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: '确认新密码',
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                        enabled: !_isLoading,
-                      ),
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed:
-                          _isLoading
-                              ? null
-                              : () {
-                                Navigator.of(context).pop();
-                              },
-                      child: const Text('取消'),
-                    ),
-                    TextButton(
-                      onPressed:
-                          _isLoading
-                              ? null
-                              : () async {
-                                // 只检查新密码是否一致
-                                if (_newPasswordController.text !=
-                                    _confirmPasswordController.text) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('两次输入的新密码不一致'),
-                                    ),
-                                  );
-                                  return;
-                                }
-
-                                // 检查新密码是否为空
-                                if (_newPasswordController.text.isEmpty) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('新密码不能为空')),
-                                  );
-                                  return;
-                                }
-
-                                setDialogState(() {
-                                  _isLoading = true;
-                                });
-
-                                try {
-                                  final request = RequestModel(
-                                    token:
-                                        '9d83504a-5d28-4dca-a034-374c569e17d0',
-                                    username: 'wjy',
-                                  );
-
-                                  final result = await _userService
-                                      .updatePassword(
-                                        oldPassword:
-                                            _oldPasswordController.text,
-                                        newPassword:
-                                            _newPasswordController.text,
-                                        request: request,
-                                      )
-                                      .timeout(
-                                        const Duration(seconds: 10),
-                                        onTimeout: () {
-                                          throw Exception('请求超时，请重试');
-                                        },
-                                      );
-
-                                  if (!mounted) return;
-
-                                  Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('密码修改成功')),
-                                  );
-                                } catch (e) {
-                                  if (!mounted) return;
-
-                                  print('密码修改错误: $e');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('密码修改失败：$e')),
-                                  );
-                                  setDialogState(() {
-                                    _isLoading = false;
-                                  });
-                                }
-                              },
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text('确认'),
-                    ),
-                  ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('修改密码'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _oldPasswordController,
+                decoration: const InputDecoration(
+                  labelText: '旧密码',
+                  border: OutlineInputBorder(),
                 ),
+                obscureText: true,
+                enabled: !_isLoading,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _newPasswordController,
+                decoration: const InputDecoration(
+                  labelText: '新密码',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                enabled: !_isLoading,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _confirmPasswordController,
+                decoration: const InputDecoration(
+                  labelText: '确认新密码',
+                  border: OutlineInputBorder(),
+                ),
+                obscureText: true,
+                enabled: !_isLoading,
+              ),
+            ],
           ),
+          actions: [
+            TextButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      Navigator.of(context).pop();
+                    },
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: _isLoading
+                  ? null
+                  : () async {
+                      // 只检查新密码是否一致
+                      if (_newPasswordController.text !=
+                          _confirmPasswordController.text) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('两次输入的新密码不一致'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      // 检查新密码是否为空
+                      if (_newPasswordController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('新密码不能为空')),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() {
+                        _isLoading = true;
+                      });
+
+                      try {
+                        final prefs = await SharedPreferences.getInstance();
+                        final token = prefs.getString('token');
+                        final username = prefs.getString('username');
+                        print('修改密码时使用的 token: ' + (token ?? 'null'));
+                        print('修改密码时使用的 username: ' + (username ?? 'null'));
+
+                        final request = RequestModel(
+                          token: token,
+                          username: username,
+                        );
+
+                        final result = await _userService
+                            .updatePassword(
+                          oldPassword: _oldPasswordController.text,
+                          newPassword: _newPasswordController.text,
+                          request: request,
+                        )
+                            .timeout(
+                          const Duration(seconds: 10),
+                          onTimeout: () {
+                            throw Exception('请求超时，请重试');
+                          },
+                        );
+
+                        if (!mounted) return;
+
+                        Navigator.of(context).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('密码修改成功，请重新登录')),
+                        );
+
+                        // 清除本地存储并跳转到登录页
+                        await _userService.logout();
+                        if (!mounted) return;
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          '/login',
+                          (route) => false,
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+
+                        print('密码修改错误: $e');
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('密码修改失败：$e')),
+                        );
+                        setDialogState(() {
+                          _isLoading = false;
+                        });
+                      }
+                    },
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text('确认'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -452,10 +460,9 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
           ),
-          crossFadeState:
-              _isSecurityExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
+          crossFadeState: _isSecurityExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 300),
         ),
       ],
