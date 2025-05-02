@@ -1,7 +1,7 @@
 class ApiConstants {
   // API基础路径
   static const String baseUrl =
-      'http://43.143.231.162:8000';
+      'http://192.168.107.1:8000';
 
   // 用户相关接口
   static const String user = '/api/hangzd/user';
@@ -17,10 +17,8 @@ class ApiConstants {
   static const String captcha = '$user/captcha';
 
   // 问答相关接口
-  static const String questions = '/api/hangzd/questions';
+  static const String question = '/api/hangzd/question';
   static const String answers = '/api/hangzd/answers';
-  static const String myQuestions = '$questions/my';
-  static const String myAnswers = '$answers/my';
 
   // 设置相关接口
   static const String settings = '/api/hangzd/settings';

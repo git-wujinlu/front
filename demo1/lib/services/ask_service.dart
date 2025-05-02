@@ -29,18 +29,19 @@ class AskService {
 
   Future<bool> askQuestion(String title, String content) async {
     var response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.questions}'),
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.question}'),
         headers: await RequestModel.getHeaders(),
         body: json.encode({
-          "images": '',
-          "categoryId": '',
+          "images": '1',
+          "categoryId": '1',
           "title": title,
           "content": content,
         }));
-    if (response.statusCode == 200) {
+    if (jsonDecode(response.body)['success'] == true) {
       print(jsonDecode(response.body));
       return true;
     }
+    print(jsonDecode(response.body));
     return false;
   }
 }
