@@ -25,6 +25,7 @@ class UserService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
     await prefs.remove('username');
+    CaptchaOwner = null; // 清除验证码 cookie
   }
 
   // 获取登录验证码
@@ -113,10 +114,17 @@ class UserService {
 
       final response = await _dio.get(
         url,
-        options: Options(headers: headers),
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
 
       print('服务器返回: ${response.data}');
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['message'] ?? '获取用户信息失败');
+      }
 
       if (response.data['data'] == null) {
         throw Exception('获取用户信息失败');
@@ -287,12 +295,13 @@ class UserService {
 
       final response = await _dio.put(
         ApiConstants.userPassword,
-        queryParameters: {
+        data: {
           'oldPassword': oldPassword,
           'newPassword': newPassword,
         },
         options: Options(
           headers: request?.toHeaders(),
+          contentType: 'application/json',
           validateStatus: (status) => status != null && status < 500,
         ),
       );

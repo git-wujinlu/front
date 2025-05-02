@@ -20,6 +20,7 @@ class RequestModel {
     return {
       if (token != null) 'token': token!,
       if (username != null) 'username': username!,
+      'Content-Type': 'application/json'
     };
   }
 }
