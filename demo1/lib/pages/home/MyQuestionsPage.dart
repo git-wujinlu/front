@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/user_service.dart';
 import '../../models/request_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyQuestionsPage extends StatefulWidget {
   const MyQuestionsPage({super.key});
@@ -30,15 +31,30 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
         _error = null;
       });
 
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final username = prefs.getString('username');
+      print('当前 token: ' + (token ?? 'null'));
+      print('当前 username: ' + (username ?? 'null'));
+
       final request = RequestModel(
-        token: '9d83504a-5d28-4dca-a034-374c569e17d0',
-        username: 'wjy',
+        token: token,
+        username: username,
       );
 
       final response = await _userService.getUserQuestions(
-        'wjy',
+        username ?? '',
         request: request,
       );
+
+      // 检查登录状态和数据有效性
+      if (response['success'] != true || response['data'] == null) {
+        setState(() {
+          _questions = [];
+          _isLoading = false;
+        });
+        return;
+      }
 
       setState(() {
         _questions = response['data'];

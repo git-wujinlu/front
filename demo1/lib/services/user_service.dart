@@ -18,8 +18,13 @@ class UserService {
   static Map<String, dynamic>? _latestUserInfo;
 
   UserService() : _dio = MockService.dio {
-    // 在构造函数中设置 mock 拦截器
-    // MockService.setupMockInterceptors();
+    // 移除 _clearOldData 调用
+  }
+
+  Future<void> _clearOldData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('username');
   }
 
   // 获取登录验证码
@@ -27,9 +32,17 @@ class UserService {
     final response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.captcha}'),
         headers: await RequestModel.getHeaders());
-    CaptchaOwner = response.headers['set-cookie']!
-        .substring(0, response.headers['set-cookie']!.indexOf(';'));
-    print(response.headers);
+
+    // 添加响应内容打印
+    print('验证码响应状态码: ${response.statusCode}');
+    print('验证码响应头: ${response.headers}');
+    print('验证码响应体: ${response.body}');
+
+    // 添加空值检查
+    final setCookie = response.headers['set-cookie'];
+    if (setCookie != null) {
+      CaptchaOwner = setCookie.substring(0, setCookie.indexOf(';'));
+    }
     return response.bodyBytes;
   }
 
@@ -86,27 +99,34 @@ class UserService {
   // 获取用户信息（通过用户名）
   Future<Map<String, dynamic>> getUserByUsername() async {
     try {
-      // 如果有最新数据，直接返回
-      if (_latestUserInfo != null) {
-        return {
-          'code': '0',
-          'message': null,
-          'data': _latestUserInfo,
-          'success': true,
-        };
-      }
       final prefs = await SharedPreferences.getInstance();
+      final username = prefs.getString('username');
+      final headers = await RequestModel.getHeaders();
+      final url =
+          ApiConstants.userInfo.replaceAll('{username}', username ?? '');
+      print('调用用户信息接口: ${ApiConstants.baseUrl}$url');
+      print('请求 headers: $headers');
+
+      if (username == null) {
+        throw Exception('未找到用户信息，请重新登录');
+      }
+
       final response = await _dio.get(
-        ApiConstants.userInfo
-            .replaceAll('{username}', prefs.getString('username')!),
-        options: Options(headers: await RequestModel.getHeaders()),
+        url,
+        options: Options(headers: headers),
       );
 
-      // 更新最新数据
-      _latestUserInfo = response.data['data'];
+      print('服务器返回: ${response.data}');
+
+      if (response.data['data'] == null) {
+        throw Exception('获取用户信息失败');
+      }
+
       return response.data;
     } on DioException catch (e) {
       throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      throw Exception('获取用户信息失败：$e');
     }
   }
 
@@ -156,61 +176,45 @@ class UserService {
       print(
           '参数: oldUsername=$oldUsername, newUsername=$newUsername, phone=$phone, introduction=$introduction, avatar=$avatar'); // 添加参数日志
 
-      // 创建FormData对象
-      final formData = FormData.fromMap({
+      // 创建请求体
+      final requestBody = {
         'oldUsername': oldUsername,
         'newUsername': newUsername,
         'phone': phone,
         'introduction': introduction,
-      });
+      };
 
-      // 如果有新头像，添加到FormData中
+      // 如果有头像，添加到请求体中
       if (avatar != null) {
-        if (avatar.startsWith('/')) {
-          // 如果是本地文件路径
-          final file = File(avatar);
-          if (await file.exists()) {
-            formData.files.add(
-              MapEntry(
-                'avatar',
-                await MultipartFile.fromFile(
-                  avatar,
-                  filename: avatar.split('/').last,
-                ),
-              ),
-            );
-          } else {
-            print('头像文件不存在: $avatar');
-          }
-        } else {
-          // 如果是URL，直接作为字段传递
-          formData.fields.add(MapEntry('avatar', avatar));
-        }
+        requestBody['avatar'] = avatar;
       }
 
-      print('发送请求数据: ${formData.fields}'); // 添加请求数据日志
-      if (formData.files.isNotEmpty) {
-        print(
-            '包含文件: ${formData.files.map((f) => f.value.filename).join(', ')}');
-      }
+      print('发送请求数据: $requestBody'); // 添加请求数据日志
 
       final response = await _dio.put(
         ApiConstants.userProfile,
-        data: formData,
+        data: requestBody,
         options: Options(
           headers: await RequestModel.getHeaders(),
-          contentType: 'multipart/form-data',
-          sendTimeout: const Duration(seconds: 30), // 增加超时时间
-          receiveTimeout: const Duration(seconds: 30),
+          contentType: 'application/json',
         ),
       );
 
       print('更新用户资料响应: ${response.data}'); // 添加响应日志
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // 更新本地缓存
+        if (_latestUserInfo != null) {
+          _latestUserInfo!['username'] = newUsername;
+          _latestUserInfo!['phone'] = phone;
+          _latestUserInfo!['introduction'] = introduction;
+          if (avatar != null) {
+            _latestUserInfo!['avatar'] = avatar;
+          }
+        }
         return response.data;
       } else {
-        throw Exception('更新失败: ${response.statusCode}');
+        throw Exception(response.data['message'] ?? '更新失败');
       }
     } on DioException catch (e) {
       print('更新用户资料失败: ${e.message}'); // 添加错误日志
@@ -233,19 +237,33 @@ class UserService {
     try {
       print('开始更新用户标签'); // 添加调试日志
       // 将标签列表转换为逗号分隔的字符串，确保没有多余的空格
-      final tagsString = tags.map((tag) => tag.trim()).join(',');
-      print('标签字符串: $tagsString'); // 添加调试日志
+      final tagsString = tags
+          .map((tag) => tag.trim())
+          .where((tag) => tag.isNotEmpty)
+          .join(',');
+      final data = tagsString.isEmpty ? {'tags': null} : {'tags': tagsString};
+      final headers = await RequestModel.getHeaders();
+      print('调用标签更新接口: ${ApiConstants.baseUrl}${ApiConstants.userTags}');
+      print('请求 headers: $headers');
+      print('请求数据: $data');
 
       final response = await _dio.put(
-        '${ApiConstants.userInfo}/$username/tags',
-        data: {'tags': tagsString},
-        options: Options(headers: await RequestModel.getHeaders()),
+        ApiConstants.userTags, // 使用正确的 API 路径
+        data: data,
+        options: Options(headers: headers),
       );
       print('标签更新响应: ${response.data}'); // 添加调试日志
 
       // 更新最新数据中的标签
       if (_latestUserInfo != null) {
         _latestUserInfo!['tags'] = tagsString;
+        print('更新后的 _latestUserInfo: $_latestUserInfo'); // 添加调试日志
+      } else {
+        _latestUserInfo = {
+          'username': username,
+          'tags': tagsString,
+        };
+        print('创建新的 _latestUserInfo: $_latestUserInfo'); // 添加调试日志
       }
 
       return response.data;
@@ -337,6 +355,12 @@ class UserService {
 
   // 清除缓存数据（用于测试）
   static void clearCache() {
+    _latestUserInfo = null;
+  }
+
+  // 登出
+  Future<void> logout() async {
+    await _clearOldData();
     _latestUserInfo = null;
   }
 }

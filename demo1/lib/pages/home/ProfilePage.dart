@@ -155,18 +155,34 @@ class _ProfilePageState extends State<ProfilePage> {
       // 清除缓存以强制刷新数据
       UserService.clearCache();
 
+      // 强制刷新一次用户信息，确保标签和后端一致
+      final refreshed = await _userService.getUserByUsername();
+      final refreshedData = refreshed['data'];
+      final refreshedTagsString = refreshedData['tags'] as String? ?? '';
+      final refreshedTagsList = refreshedTagsString.isNotEmpty
+          ? refreshedTagsString
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : <String>[];
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('保存成功')),
       );
 
+      // 更新本地状态
       setState(() {
-        _userInfo = result['data'];
-        _oldUsername = result['data']['username'];
-        _avatarUrl = result['data']['avatar'];
+        _userInfo = refreshedData;
+        _oldUsername = refreshedData['username'];
+        _avatarUrl = refreshedData['avatar'];
+        _tags = refreshedTagsList;
         _selectedImage = null;
       });
+
+      print('刷新后的标签列表: $_tags'); // 添加调试日志
 
       Navigator.pop(context, true);
     } catch (e) {

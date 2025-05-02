@@ -39,12 +39,21 @@ class _SelfPageState extends State<SelfPage> {
       final userResponse = await _userService.getUserByUsername();
       final userData = userResponse['data'];
 
+      if (userData == null) {
+        throw Exception('获取用户信息失败，请重新登录');
+      }
+
       // 从用户信息中获取标签字符串并转换为列表
       final tagsString = userData['tags'] as String? ?? '';
-      final tagsList =
-          tagsString.isNotEmpty
-              ? tagsString.split(',').map((e) => e.trim()).toList()
-              : <String>[];
+      final tagsList = tagsString.isNotEmpty
+          ? tagsString
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList()
+          : <String>[];
+
+      print('加载的用户标签: $tagsList'); // 添加调试日志
 
       // 获取用户统计信息
       // final statsResponse = await _userService.getUserStats();
@@ -134,7 +143,7 @@ class _SelfPageState extends State<SelfPage> {
                       radius: 40,
                       backgroundImage: NetworkImage(
                         _userInfo?['avatar'] ??
-                            'https://via.placeholder.com/150',
+                            'https://img.icons8.com/ios/50/user--v1.png',
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -250,20 +259,19 @@ class _SelfPageState extends State<SelfPage> {
             Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
-              children:
-                  _tags
-                      .map(
-                        (tag) => Chip(
-                          label: Text(tag),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).primaryColor.withOpacity(0.1),
-                          labelStyle: TextStyle(
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      )
-                      .toList(),
+              children: _tags
+                  .map(
+                    (tag) => Chip(
+                      label: Text(tag),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).primaryColor.withOpacity(0.1),
+                      labelStyle: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ),
