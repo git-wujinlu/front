@@ -8,7 +8,6 @@ import '../constants/api_constants.dart';
 import '../models/request_model.dart';
 import '../utils/api_error_handler.dart';
 import 'mock_service.dart';
-import 'dart:io';
 
 class UserService {
   final Dio _dio;
@@ -137,7 +136,39 @@ class UserService {
       throw Exception('获取用户信息失败：$e');
     }
   }
+  Future<Map<String, dynamic>> getOtherUserByUsername(String username) async {
+    try {
+      final headers = await RequestModel.getHeaders();
+      final url =
+      ApiConstants.userInfo.replaceAll('{username}', username);
+      print('调用用户信息接口: ${ApiConstants.baseUrl}$url');
+      print('请求 headers: $headers');
 
+      final response = await _dio.get(
+        url,
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('服务器返回: ${response.data}');
+
+      if (response.data['success'] != true) {
+        throw Exception(response.data['message'] ?? '获取用户信息失败');
+      }
+
+      if (response.data['data'] == null) {
+        throw Exception('获取用户信息失败');
+      }
+
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      throw Exception('获取用户信息失败：$e');
+    }
+  }
   // 获取用户标签
   Future<Map<String, dynamic>> getUserTags(
     String username, {
@@ -362,6 +393,39 @@ class UserService {
     }
   }
 
+  Future<Map<String, dynamic>> getMessagesBetweenUsers(
+      String username1,
+      String username2,
+      ) async {
+    try {
+      // 获取第一个用户的ID
+      final response1 = await _dio.get(
+        ApiConstants.userInfo.replaceAll('{username}', username1),
+        options: Options(headers: await RequestModel.getHeaders()),
+      );
+      final int senderId = response1.data['data']['id'];
+
+      // 获取第二个用户的ID
+      final response2 = await _dio.get(
+        ApiConstants.userInfo.replaceAll('{username}', username2),
+        options: Options(headers: await RequestModel.getHeaders()),
+      );
+      final int receiverId = response2.data['data']['id'];
+
+      // 获取双方之间的消息
+      final responseMessages = await _dio.get(
+        'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId',
+        options: Options(headers: await RequestModel.getHeaders()),
+      );
+
+      print('获取消息成功: ${responseMessages.data}');
+      return responseMessages.data;
+    } on DioException catch (e) {
+      print('获取消息失败: ${e.message}');
+      throw Exception(ApiErrorHandler.handleError(e));
+    }
+  }
+
   // 清除缓存数据（用于测试）
   static void clearCache() {
     _latestUserInfo = null;
@@ -371,5 +435,88 @@ class UserService {
   Future<void> logout() async {
     await _clearOldData();
     _latestUserInfo = null;
+  }
+  Future<void> addMessage(String name, String content) async {
+    try {
+  // 第一步：获取目标用户ID
+      final dio = Dio();
+      final response = await dio.get(
+        ApiConstants.userInfo.replaceAll('{username}', name),
+        options: Options(headers: await RequestModel.getHeaders()),
+      );
+      final int toId = response.data['data']['id'];
+
+  // 第二步：获取当前用户token和username
+      final prefs = await SharedPreferences.getInstance();
+      final String token = prefs.getString('token') ?? '';
+      final String username = prefs.getString('username') ?? '';
+
+  // 第三步：构造HTTP请求发送消息
+      final url = Uri.parse('http://43.143.231.162:8000/api/hangzd/message');
+      final request = http.Request('POST', url);
+      request.body = json.encode({
+        'toId': toId,
+        'content': content,
+        'type': 'answer', // 如果有类型变更逻辑，可单独提出来
+      });
+      request.headers.addAll({
+        'token': token,
+        'username': username,
+        'Content-Type': 'application/json',
+      });
+
+      final responseStream = await request.send();
+
+      if (responseStream.statusCode == 200) {
+        final responseBody = await responseStream.stream.bytesToString();
+        print('消息发送成功: $responseBody');
+      } else {
+        final error = await responseStream.stream.bytesToString();
+        print('消息发送失败: ${responseStream.statusCode} $error');
+        throw Exception('消息发送失败: ${responseStream.reasonPhrase}');
+      }
+    } catch (e) {
+      print('addMessage 错误: $e');
+      rethrow;
+    }
+  }
+
+
+  Future<void> like(String targetUsername, int value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final username = prefs.getString('username') ?? '';
+
+      final headers = {
+        'token': token,
+        'username': username,
+        'Content-Type': 'application/json',
+      };
+
+      final request = http.Request(
+        'POST',
+        Uri.parse('http://43.143.231.162:8000/api/hangzd/user/like'),
+      );
+
+      request.body = json.encode({
+        'username': targetUsername,
+        'increment': value, // 1 表示好评，-1 表示差评
+      });
+
+      request.headers.addAll(headers);
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print('评价成功: $responseBody');
+      } else {
+        print('评价失败: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('发送 like 请求失败: $e');
+      rethrow;
+    }
   }
 }
