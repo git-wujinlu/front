@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:demo1/pages/home/ConversationPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../services/user_service.dart';
+import 'ConversationPage.dart';
 
 class MessagePage extends StatefulWidget {
   const MessagePage({super.key});
@@ -10,17 +13,58 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<dynamic> activeQuestions = [];
+  List<dynamic> activeAnswers = [];
+  bool isLoadingQuestions = true;
+  bool isLoadingAnswers = true;
+
+  final UserService _userService = UserService(); // 实例化 UserService
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    // Load active questions when the page is first initialized
+    getActiveQuestions();
+    getActiveAnswers();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  // Get active questions
+  Future<void> getActiveQuestions() async {
+    final prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('username') ?? '';
+
+    try {
+      final response = await _userService.getUserQuestions(username);
+      setState(() {
+        activeQuestions = response['data'];
+        isLoadingQuestions = false;
+      });
+    } catch (e) {
+      print('获取用户问题失败: $e');
+      setState(() {
+        isLoadingQuestions = false;
+      });
+    }
+  }
+
+  // Get active answers
+  Future<void> getActiveAnswers() async {
+    final prefs = await SharedPreferences.getInstance();
+    String username = prefs.getString('username') ?? '';
+
+    try {
+      final response = await _userService.getUserAnswers(username);
+      setState(() {
+        activeAnswers = response['data'];
+        isLoadingAnswers = false;
+      });
+    } catch (e) {
+      print('获取用户回答失败: $e');
+      setState(() {
+        isLoadingAnswers = false;
+      });
+    }
   }
 
   @override
@@ -35,25 +79,41 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
           padding: EdgeInsets.symmetric(horizontal: 0.05 * width),
           child: Column(
             children: [
-              SizedBox(height: 0.02 * height),
+              // Header: Logo and Title
               Container(
                 height: 0.05 * height,
                 alignment: Alignment.centerLeft,
-                child: Text("logo", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                child: Row(
+                  children: [
+                    Image.asset(
+                      'assets/logo1.png',
+                      height: 0.04 * height,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "航准答",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              // TabBar
+              SizedBox(height: 0.01 * height),
               Container(
                 height: 0.05 * height,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
                   color: Colors.grey[200],
                 ),
                 child: TabBar(
                   controller: _tabController,
-                  isScrollable: false, // 平均分配宽度
-                  indicatorSize: TabBarIndicatorSize.tab, // 指示器覆盖整个 Tab
-                  indicator: BoxDecoration(
+                  isScrollable: false,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: const BoxDecoration(
                     color: Colors.deepPurple,
-                    borderRadius: BorderRadius.circular(10),
                   ),
                   labelColor: Colors.white,
                   unselectedLabelColor: Colors.black,
@@ -63,12 +123,13 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
                   ],
                 ),
               ),
+              // TabView
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
-                  children: const [
-                    MyQuestionsTab(),
-                    MyAnswersTab(),
+                  children: [
+                    MyQuestionsTab(activeQuestions: activeQuestions, isLoading: isLoadingQuestions),
+                    MyAnswersTab(activeAnswers: activeAnswers, isLoading: isLoadingAnswers),
                   ],
                 ),
               ),
@@ -80,26 +141,48 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
   }
 }
 
+
 class MyQuestionsTab extends StatelessWidget {
-  const MyQuestionsTab({super.key});
+  final List<dynamic> activeQuestions;
+  final bool isLoading;
+
+  const MyQuestionsTab({super.key, required this.activeQuestions, required this.isLoading});
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery
-        .of(context)
-        .size;
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (activeQuestions.isEmpty) {
+      return const Center(
+        child: Text(
+          "当前暂无提问",
+          style: TextStyle(fontSize: 24), // 增大字号
+        ),
+      );
+    }
+
+    final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
 
     return ListView.builder(
-      itemCount: 10,
+      itemCount: activeQuestions.length,
       itemBuilder: (context, index) {
+        var question = activeQuestions[index];
+        String title = question['title'] ?? '无标题';
+        String content = question['content'] ?? '无内容';
+        String avatar = question['images'] != null && question['images'].isNotEmpty
+            ? question['images'][0]
+            : 'assets/img.png'; // 默认头像
+
         return GestureDetector(
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ConversationPage(fromQuestion: true),
+                builder: (context) =>  ConversationPage(fromQuestion: true,name: question['username'],),
               ),
             );
           },
@@ -122,8 +205,13 @@ class MyQuestionsTab extends StatelessWidget {
                   SizedBox(
                     width: 0.15 * width,
                     child: ClipOval(
-                      child: Image.asset(
-                        'assets/img.png',
+                      child: avatar.startsWith('http') ?
+                      Image.network( avatar,
+                        width: 0.15 * width,
+                        height: 0.15 * width,
+                        fit: BoxFit.cover,) :
+                      Image.asset(
+                        avatar,
                         width: 0.15 * width,
                         height: 0.15 * width,
                         fit: BoxFit.cover,
@@ -135,17 +223,14 @@ class MyQuestionsTab extends StatelessWidget {
                     width: 0.65 * width,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          "问题标题",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-
+                          title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "提问内容提问内容提问内容提问内容提问内容",
+                          content,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
@@ -162,24 +247,44 @@ class MyQuestionsTab extends StatelessWidget {
   }
 }
 
-  class MyAnswersTab extends StatelessWidget {
-  const MyAnswersTab({super.key});
+class MyAnswersTab extends StatelessWidget {
+  final List<dynamic> activeAnswers;
+  final bool isLoading;
+
+  const MyAnswersTab({super.key, required this.activeAnswers, required this.isLoading});
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (activeAnswers.isEmpty) {
+      return const Center(child: Text(
+          "当前暂无回答",
+          style: TextStyle(fontSize: 24), ),);
+    }
+
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
 
     return ListView.builder(
-      itemCount: 10,
+      itemCount: activeAnswers.length,
       itemBuilder: (context, index) {
+        var answer = activeAnswers[index];
+        String title = answer['title'] ?? '无标题';
+        String content = answer['content'] ?? '无内容';
+        String avatar = answer['images'] != null && answer['images'].isNotEmpty
+            ? answer['images'][0]
+            : 'assets/img.png'; // 默认头像
+
         return GestureDetector(
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ConversationPage(fromQuestion: false),
+                builder: (context) => ConversationPage(fromQuestion: false,name: answer['username'],),
               ),
             );
           },
@@ -202,8 +307,13 @@ class MyQuestionsTab extends StatelessWidget {
                   SizedBox(
                     width: 0.15 * width,
                     child: ClipOval(
-                      child: Image.asset(
-                        'assets/img.png',
+                      child: avatar.startsWith('http') ?
+                      Image.network( avatar,
+                        width: 0.15 * width,
+                        height: 0.15 * width,
+                        fit: BoxFit.cover,) :
+                      Image.asset(
+                        avatar,
                         width: 0.15 * width,
                         height: 0.15 * width,
                         fit: BoxFit.cover,
@@ -215,14 +325,14 @@ class MyQuestionsTab extends StatelessWidget {
                     width: 0.65 * width,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          "问题标题",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "回答内容回答内容回答内容回答内容回答内容",
+                          content,
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
@@ -237,5 +347,4 @@ class MyQuestionsTab extends StatelessWidget {
       },
     );
   }
-
-  }
+}

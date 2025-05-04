@@ -22,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   final TextEditingController _passwordCheckController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _mailController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   final TextEditingController _captchaController = TextEditingController();
@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
   bool codeCollDown = true;
   int codeTime = 0;
 
-  Timer codeTimer = Timer(Duration(seconds: 1), () => {});
+  Timer codeTimer = Timer(const Duration(seconds: 1), () => {});
 
   void codeTimerHandle() {}
 
@@ -42,12 +42,13 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         mailChecked = false;
       });
-    } else if (!mailChecked) {} else if (codeCollDown) {
+    } else if (!mailChecked) {
+    } else if (codeCollDown) {
       setState(() {
         codeCollDown = false;
       });
       codeTime = 60;
-      codeTimer = Timer.periodic(Duration(seconds: 1), (codeTimer) {
+      codeTimer = Timer.periodic(const Duration(seconds: 1), (codeTimer) {
         if (codeTime != 0) {
           setState(() {
             --codeTime;
