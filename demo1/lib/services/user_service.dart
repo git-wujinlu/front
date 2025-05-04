@@ -362,6 +362,24 @@ class UserService {
     }
   }
 
+  Future<bool> checkLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final username = prefs.getString('username');
+    final token = prefs.getString('token');
+    if (username == null || token == null) {
+      return false;
+    }
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.checkLogin}?username=${username}&token=${token}'),
+      headers: await RequestModel.getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['data'];
+    }
+    return false;
+  }
+
   // 清除缓存数据（用于测试）
   static void clearCache() {
     _latestUserInfo = null;
@@ -371,5 +389,15 @@ class UserService {
   Future<void> logout() async {
     await _clearOldData();
     _latestUserInfo = null;
+    final prefs = await SharedPreferences.getInstance();
+    final username = prefs.getString('username');
+    final token = prefs.getString('token');
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.logout}?username=${username}&token=${token}'),
+      headers: await RequestModel.getHeaders(),
+    );
+    prefs.remove('username');
+    prefs.remove('token');
   }
 }

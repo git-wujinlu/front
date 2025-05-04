@@ -15,6 +15,7 @@ class ApiConstants {
   static const String logout = '$user/logout';
   static const String sendCode = '$user/send-code';
   static const String captcha = '$user/captcha';
+  static const String checkLogin = '$user/check-login';
 
   // 问答相关接口
   static const String question = '/api/hangzd/question';
