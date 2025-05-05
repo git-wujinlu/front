@@ -51,7 +51,8 @@ class UserService {
   Future<bool> login(String username, String password, String code) async {
     Map<String, String> headers = await RequestModel.getHeaders();
     headers['cookie'] = CaptchaOwner!;
-    print(headers);
+    print('登录请求头: $headers');
+
     final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.login}'),
         body: json.encode({
@@ -60,6 +61,11 @@ class UserService {
           "code": code,
         }),
         headers: headers);
+
+    print('登录响应状态码: ${response.statusCode}');
+    print('登录响应体: ${response.body}');
+    print('解析后的响应数据: ${jsonDecode(response.body)}');
+
     if (response.statusCode == 200) {
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('token', jsonDecode(response.body)['data']['token']);
