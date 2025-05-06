@@ -114,7 +114,7 @@ class _AskPageState extends State<AskPage> {
                         context,
                         MaterialPageRoute(
                           builder: (context) =>
-                              const ConversationPage(fromQuestion: false),
+                              const ConversationPage(fromQuestion: false,name:"提问者的名字"),
                         ),
                       );
                     },

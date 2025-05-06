@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:demo1/services/user_service.dart'; // 引入 user_service
 
 class CommentPage extends StatefulWidget {
   final bool fromQuestion;
-  const CommentPage({super.key, required this.fromQuestion});
+  final String targetUser;
+
+  const CommentPage({
+    super.key,
+    required this.fromQuestion,
+    required this.targetUser,
+  });
 
   @override
   State<CommentPage> createState() => _CommentPageState();
 }
 
 class _CommentPageState extends State<CommentPage> {
-  final TextEditingController _controller = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  int? _lastRating; // 记录最后一次点击，1表示好评，-1表示差评
+
+  void _submitRating() async {
+    if (_lastRating != null) {
+      try {
+        await UserService().like(widget.targetUser, _lastRating!);
+        print('评价成功');
+      } catch (e) {
+        print('评价失败: $e');
+      }
+    } else {
+      print('未进行评价');
+    }
+    Navigator.pop(context);
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,16 +41,12 @@ class _CommentPageState extends State<CommentPage> {
 
     return Scaffold(
       backgroundColor:
-          Theme.of(context).textTheme.bodyLarge?.color == Colors.white
-              ? Colors.black
-              : Colors.white,
+      Theme.of(context).textTheme.bodyLarge?.color == Colors.white
+          ? Colors.black
+          : Colors.white,
       body: Column(
         children: [
-          Container(
-            height: 0.05 * height,
-          ),
-
-          // 上方5%：浅灰色背景+右上角返回按钮
+          Container(height: 0.05 * height),
           SizedBox(
             height: 0.05 * height,
             child: Container(
@@ -39,23 +56,17 @@ class _CommentPageState extends State<CommentPage> {
                 children: [
                   IconButton(
                     icon: Icon(Icons.close,
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodyLarge
-                            ?.color), // 图标设置成白色
+                        color: Theme.of(context).textTheme.bodyLarge?.color),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
           ),
-
-          // 往下25%：浅灰色背景
           Container(
             color: Theme.of(context).cardTheme.color,
             height: 0.275 * height,
           ),
-          // 往下5%：提示语句
           SizedBox(
             height: 0.05 * height,
             child: Container(
@@ -69,11 +80,7 @@ class _CommentPageState extends State<CommentPage> {
               ),
             ),
           ),
-          Container(
-            height: 0.02 * height,
-            color: Theme.of(context).cardTheme.color,
-          ),
-          // 往下10%：大拇指按钮
+          Container(height: 0.02 * height, color: Theme.of(context).cardTheme.color),
           SizedBox(
             height: 0.10 * height,
             child: Container(
@@ -82,25 +89,31 @@ class _CommentPageState extends State<CommentPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   GestureDetector(
-                    onTap: () => print('好'),
+                    onTap: () {
+                      setState(() => _lastRating = 1);
+                      print('好评');
+                    },
                     child: Container(
                       width: 60,
                       height: 60,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.red,
+                        color: _lastRating == 1 ? Colors.red.shade800 : Colors.red,
                       ),
                       child: const Icon(Icons.thumb_up, color: Colors.white),
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => print('坏'),
+                    onTap: () {
+                      setState(() => _lastRating = -1);
+                      print('差评');
+                    },
                     child: Container(
                       width: 60,
                       height: 60,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.green,
+                        color: _lastRating == -1 ? Colors.green.shade800 : Colors.green,
                       ),
                       child: const Icon(Icons.thumb_down, color: Colors.white),
                     ),
@@ -109,13 +122,7 @@ class _CommentPageState extends State<CommentPage> {
               ),
             ),
           ),
-
-          Container(
-            height: 0.03 * height,
-            color: Theme.of(context).cardTheme.color,
-          ),
-          // 往下5%：确定取消按钮
-
+          Container(height: 0.03 * height, color: Theme.of(context).cardTheme.color),
           Container(
             height: 0.05 * height,
             color: Theme.of(context).cardTheme.color,
@@ -129,10 +136,7 @@ class _CommentPageState extends State<CommentPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                    Navigator.pop(context);
-                  },
+                  onPressed: _submitRating,
                   child: Text('确定',
                       style: TextStyle(
                           color: Theme.of(context).textTheme.bodyLarge?.color)),
@@ -140,11 +144,8 @@ class _CommentPageState extends State<CommentPage> {
               ),
             ),
           ),
-          // 往下40%：浅灰色背景
           Expanded(
-            child: Container(
-              color: Theme.of(context).cardTheme.color,
-            ),
+            child: Container(color: Theme.of(context).cardTheme.color),
           ),
         ],
       ),
