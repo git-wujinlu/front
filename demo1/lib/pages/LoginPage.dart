@@ -482,8 +482,10 @@ class _LoginPageState extends State<LoginPage> {
                               if (snapshot.connectionState ==
                                   ConnectionState.waiting) {
                                 return Text('');
-                              } else {
+                              } else if(snapshot.hasData) {
                                 return Image.memory(snapshot.data!);
+                              }else {
+                                return Text('加载失败');
                               }
                             }),
                       ),

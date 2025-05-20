@@ -16,6 +16,8 @@ class AskPage extends StatefulWidget {
 }
 
 class _AskPageState extends State<AskPage> {
+  Future<List<dynamic>>? _questionsList;
+
   Future<void> toAsk(String s) {
     if (s.isEmpty) {
       return Future.delayed(Duration(seconds: 0));
@@ -106,95 +108,110 @@ class _AskPageState extends State<AskPage> {
             ),
             SizedBox(height: 0.03 * height),
             Expanded(
-              child: ListView.builder(
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              const ConversationPage(fromQuestion: false,name:"提问者的名字"),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: EdgeInsets.only(
-                        left: 0.03 * width,
-                        right: 0.03 * width,
-                      ),
-                      height: 0.18 * height,
-                      child: Column(
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  dateFormat.format(now),
-                                  textAlign: TextAlign.left,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey[600],
+                child: FutureBuilder(
+                    future: _questionsList,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return CircularProgressIndicator();
+                      } else if (snapshot.hasData) {
+                        return ListView.builder(
+                          itemBuilder: (context, index) {
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ConversationPage(
+                                        fromQuestion: false,
+                                        name: snapshot.data?[index]
+                                            ['username']),
                                   ),
+                                );
+                              },
+                              child: Container(
+                                padding: EdgeInsets.only(
+                                  left: 0.03 * width,
+                                  right: 0.03 * width,
                                 ),
-                              ),
-                              Expanded(
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                height: 0.18 * height,
+                                child: Column(
                                   children: [
+                                    Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            dateFormat.format(now),
+                                            textAlign: TextAlign.left,
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              Container(
+                                                width: 66,
+                                                height: 28,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.deepPurple,
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    '待解答',
+                                                    style: TextStyle(
+                                                        color: Colors.white),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                     Container(
-                                      width: 66,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: Colors.deepPurple,
-                                        borderRadius: BorderRadius.circular(4),
+                                      width: 0.94 * width,
+                                      child: Text(
+                                        snapshot.data?[index]['title'],
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                      child: Center(
-                                        child: Text(
-                                          '待解答',
-                                          style: TextStyle(color: Colors.white),
+                                    ),
+                                    Container(
+                                      width: 0.94 * width,
+                                      padding: EdgeInsets.only(top: 5),
+                                      child: Text(
+                                        snapshot.data?[index]['content'],
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.left,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey[600],
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                          Container(
-                            width: 0.94 * width,
-                            child: Text(
-                              "问题标题",
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 0.94 * width,
-                            padding: EdgeInsets.only(top: 5),
-                            child: Text(
-                              "问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情问题详情",
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                itemCount: 10,
-              ),
-            ),
+                            );
+                          },
+                          itemCount: snapshot.data?.length,
+                        );
+                      } else {
+                        return Text('暂无待回答问题');
+                      }
+                    })),
           ],
         ),
       ),

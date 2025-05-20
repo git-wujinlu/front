@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: '航准答',
       theme: themeProvider.theme,
       debugShowCheckedModeBanner: false,
       home: const LoginPage(),

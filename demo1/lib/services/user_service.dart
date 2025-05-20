@@ -61,6 +61,7 @@ class UserService {
         }),
         headers: headers);
     if (response.statusCode == 200) {
+      print(jsonDecode(response.body));
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('token', jsonDecode(response.body)['data']['token']);
       prefs.setString('username', username);
@@ -137,6 +138,7 @@ class UserService {
       throw Exception('获取用户信息失败：$e');
     }
   }
+
   Future<Map<String, dynamic>> getOtherUserByUsername(String username) async {
     try {
       final headers = await RequestModel.getHeaders();
@@ -358,14 +360,12 @@ class UserService {
 
   // 获取用户的回答列表
   Future<Map<String, dynamic>> getUserAnswers(
-    String username, {
-    RequestModel? request,
-  }) async {
+    String username) async {
     try {
       print('开始获取用户回答列表'); // 添加调试日志
       final response = await _dio.get(
         '${ApiConstants.userActiveAnswers}?username=$username',
-        options: Options(headers: request?.toHeaders()),
+        options: Options(headers: await RequestModel.getHeaders()),
       );
       print('获取用户回答列表成功: ${response.data}'); // 添加调试日志
       return response.data;
@@ -377,14 +377,12 @@ class UserService {
 
   // 获取用户的问题列表
   Future<Map<String, dynamic>> getUserQuestions(
-    String username, {
-    RequestModel? request,
-  }) async {
+    String username) async {
     try {
       print('开始获取用户问题列表'); // 添加调试日志
       final response = await _dio.get(
         '${ApiConstants.userActiveQuestions}?username=$username',
-        options: Options(headers: request?.toHeaders()),
+        options: Options(headers: await RequestModel.getHeaders()),
       );
       print('获取用户问题列表成功: ${response.data}'); // 添加调试日志
       return response.data;

@@ -37,14 +37,8 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
       print('当前 token: ' + (token ?? 'null'));
       print('当前 username: ' + (username ?? 'null'));
 
-      final request = RequestModel(
-        token: token,
-        username: username,
-      );
-
       final response = await _userService.getUserQuestions(
         username ?? '',
-        request: request,
       );
 
       // 检查登录状态和数据有效性
