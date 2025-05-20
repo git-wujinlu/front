@@ -8,7 +8,6 @@ import '../constants/api_constants.dart';
 import '../models/request_model.dart';
 import '../utils/api_error_handler.dart';
 import 'mock_service.dart';
-import 'dart:io';
 
 class UserService {
   final Dio _dio;
@@ -412,6 +411,8 @@ class UserService {
       final int receiverId = response2.data['data']['id'];
 
       // 获取双方之间的消息
+      print(senderId);
+      print(receiverId);
       final responseMessages = await _dio.get(
         'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId',
         options: Options(headers: await RequestModel.getHeaders()),
@@ -465,14 +466,14 @@ class UserService {
   }
   Future<void> addMessage(String name, String content) async {
     try {
+      print(name);
   // 第一步：获取目标用户ID
-      final dio = Dio();
+      final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
       final response = await dio.get(
-        ApiConstants.userInfo.replaceAll('{username}', name),
+        '/api/hangzd/user/$name',
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int toId = response.data['data']['id'];
-
   // 第二步：获取当前用户token和username
       final prefs = await SharedPreferences.getInstance();
       final String token = prefs.getString('token') ?? '';
@@ -532,6 +533,9 @@ class UserService {
       });
 
       request.headers.addAll(headers);
+      print('准备点赞：target=$targetUsername, value=$value');
+      print('请求头: $headers');
+      print('请求体: ${request.body}');
 
       final response = await request.send();
 
@@ -546,4 +550,6 @@ class UserService {
       rethrow;
     }
   }
+
+
 }

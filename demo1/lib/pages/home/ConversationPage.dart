@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:demo1/pages/home/CommentPage.dart';
-import 'package:demo1/services/user_service.dart'; // 引入 user_service
+import 'package:demo1/services/user_service.dart';
+
+// 引入 user_service
 
 class ConversationPage extends StatefulWidget {
   final bool fromQuestion;
@@ -36,13 +38,36 @@ class _ConversationPageState extends State<ConversationPage> {
     _myUsername = prefs.getString('username') ?? '';
 
     try {
-      final messagesResponse = await UserService().getMessagesBetweenUsers(widget.name, _myUsername);
-      final data = messagesResponse['data'] as List;
-      _messages = data.map((msg) => {
+      final messagesResponse2 = await UserService().getMessagesBetweenUsers(widget.name,_myUsername);
+      final messagesResponse1 = await UserService().getMessagesBetweenUsers(_myUsername,widget.name);
+      final data1 = messagesResponse1['data'] as List;
+      final data2 = messagesResponse2['data'] as List;
+
+// 为 data1 添加 isMe: true
+      final messagesFromMe = data1.map((msg) => {
         'text': msg['content'],
-        'isMe': msg['senderUsername'] == _myUsername,
+        'isMe': true,
+        'createTime': msg['createTime'],
       }).toList();
 
+// 为 data2 添加 isMe: false
+      final messagesFromOther = data2.map((msg) => {
+        'text': msg['content'],
+        'isMe': false,
+        'createTime': msg['createTime'],
+      }).toList();
+
+// 合并两个消息列表
+      final combinedMessages = [...messagesFromMe, ...messagesFromOther];
+
+// 按 createTime 排序（升序）
+      combinedMessages.sort((a, b) => b['createTime'].compareTo(a['createTime']));
+
+// 去掉 createTime 字段，只保留 text 和 isMe
+      _messages = combinedMessages.map((msg) => {
+        'text': msg['text'],
+        'isMe': msg['isMe'],
+      }).toList();
       final me = await UserService().getUserByUsername();
       final other = await UserService().getOtherUserByUsername(widget.name);
       setState(() {
@@ -77,9 +102,9 @@ class _ConversationPageState extends State<ConversationPage> {
   void _sendMessage() async {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
-
     try {
       await UserService().addMessage(widget.name, text);
+      UserService().getMessagesBetweenUsers("c", "b");
       setState(() {
         _messages.add({'text': text, 'isMe': true});
         _textController.clear();
@@ -87,7 +112,7 @@ class _ConversationPageState extends State<ConversationPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _scrollController.animateTo(
           0, // 如果 ListView 设置了 reverse: true，0 表示滚动到底部
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
       });
@@ -134,7 +159,6 @@ class _ConversationPageState extends State<ConversationPage> {
             Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                reverse: true,
                 padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
