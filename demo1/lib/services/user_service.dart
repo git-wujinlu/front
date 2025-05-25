@@ -66,6 +66,7 @@ class UserService {
     print('解析后的响应数据: ${jsonDecode(response.body)}');
 
     if (response.statusCode == 200) {
+      print(jsonDecode(response.body));
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('token', jsonDecode(response.body)['data']['token']);
       prefs.setString('username', username);
@@ -363,17 +364,12 @@ class UserService {
   }
 
   // 获取用户的回答列表
-  Future<Map<String, dynamic>> getUserAnswers(
-    String username, {
-    RequestModel? request,
-  }) async {
+  Future<Map<String, dynamic>> getUserAnswers(String username) async {
     try {
       print('开始获取用户回答列表'); // 添加调试日志
       final response = await _dio.get(
         '${ApiConstants.userActiveAnswers}?username=$username',
-        options: Options(
-          headers: request?.toHeaders() ?? await RequestModel.getHeaders(),
-        ),
+        options: Options(headers: await RequestModel.getHeaders()),
       );
       print('获取用户回答列表成功: ${response.data}'); // 添加调试日志
       return response.data;
@@ -392,9 +388,7 @@ class UserService {
       print('开始获取用户问题列表'); // 添加调试日志
       final response = await _dio.get(
         '${ApiConstants.userActiveQuestions}?username=$username',
-        options: Options(
-          headers: request?.toHeaders() ?? await RequestModel.getHeaders(),
-        ),
+        options: Options(headers: await RequestModel.getHeaders()),
       );
       print('获取用户问题列表成功: ${response.data}'); // 添加调试日志
       return response.data;
@@ -415,12 +409,14 @@ class UserService {
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int senderId = response1.data['data']['id'];
+
       // 获取第二个用户的ID
       final response2 = await _dio.get(
         ApiConstants.userInfo.replaceAll('{username}', username2),
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int receiverId = response2.data['data']['id'];
+
       // 获取双方之间的消息
       print(senderId);
       print(receiverId);
@@ -437,6 +433,24 @@ class UserService {
     }
   }
 
+  Future<bool> checkLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final username = prefs.getString('username');
+    final token = prefs.getString('token');
+    if (username == null || token == null) {
+      return false;
+    }
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.checkLogin}?username=${username}&token=${token}'),
+      headers: await RequestModel.getHeaders(),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['data'];
+    }
+    return false;
+  }
+
   // 清除缓存数据（用于测试）
   static void clearCache() {
     _latestUserInfo = null;
@@ -446,6 +460,16 @@ class UserService {
   Future<void> logout() async {
     await _clearOldData();
     _latestUserInfo = null;
+    final prefs = await SharedPreferences.getInstance();
+    final username = prefs.getString('username');
+    final token = prefs.getString('token');
+    final response = await http.get(
+      Uri.parse(
+          '${ApiConstants.baseUrl}${ApiConstants.logout}?username=${username}&token=${token}'),
+      headers: await RequestModel.getHeaders(),
+    );
+    prefs.remove('username');
+    prefs.remove('token');
   }
 
   Future<void> addMessage(String name, String content) async {

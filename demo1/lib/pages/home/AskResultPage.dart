@@ -20,6 +20,7 @@ class _AskResultPageState extends State<AskResultPage> {
   var selectedList = List.filled(10, false);
   final String searchString;
   Future<List<dynamic>>? _searchList;
+  List<int> ids = List.filled(10, 0);
 
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
@@ -32,9 +33,22 @@ class _AskResultPageState extends State<AskResultPage> {
     });
   }
 
+  List<int> getSelectedId() {
+    List<int> ans = List.empty(growable: true);
+    for (int i = 0; i < selectedList.length; ++i) {
+      if (selectedList[i] == true) ans.add(ids[i]);
+    }
+    return ans;
+  }
+
   @override
   void initState() {
     _searchList = _askService.search(searchString);
+    _searchList?.then((data) {
+      for (int i = 0; i < data.length; ++i) {
+        ids[i] = data[i]['id'];
+      }
+    });
     _searchController.text = searchString;
     super.initState();
   }
@@ -85,6 +99,11 @@ class _AskResultPageState extends State<AskResultPage> {
                   }
                   setState(() {
                     _searchList = _askService.search(s);
+                    _searchList?.then((data) {
+                      for (int i = 0; i < data.length; ++i) {
+                        ids[i] = data[i]['id'];
+                      }
+                    });
                   });
                 },
                 controller: _searchController,
@@ -283,13 +302,14 @@ class _AskResultPageState extends State<AskResultPage> {
                                 '确定',
                                 style: TextStyle(color: Colors.blue),
                               ),
-                              onPressed: () async{
-                                if (await _askService.askQuestion(
-                                    _searchController.text,
-                                    _contentController.text)) {
+                              onPressed: () async {
+                                // if (await _askService.askQuestion(
+                                //     _searchController.text,
+                                //     _contentController.text,
+                                //     getSelectedId())) {
                                   Navigator.pop(context);
                                   Navigator.pop(context);
-                                }
+                                // }
                               },
                             ),
                           ],

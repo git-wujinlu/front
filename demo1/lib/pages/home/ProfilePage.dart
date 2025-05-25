@@ -124,13 +124,11 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _saveUserInfo() async {
     if (_isLoading) return; // 防止重复保存
 
-    print(1);
     try {
       setState(() {
         _isLoading = true;
         _error = null;
       });
-
       print('开始保存用户信息'); // 添加调试日志
 
       // 先更新用户基本信息

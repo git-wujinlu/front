@@ -90,6 +90,8 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: ElevatedButton(
               onPressed: () {
+                final _userService = UserService();
+                _userService.logout();
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   '/login',
