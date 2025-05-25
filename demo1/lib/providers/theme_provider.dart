@@ -74,7 +74,7 @@ class ThemeProvider with ChangeNotifier {
     dividerColor: Colors.grey[700],
     iconTheme: const IconThemeData(color: Colors.white),
     inputDecorationTheme: InputDecorationTheme(
-      fillColor: Colors.grey[800],
+      fillColor: Colors.grey[900],
       filled: true,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -89,7 +89,8 @@ class ThemeProvider with ChangeNotifier {
         borderSide: const BorderSide(color: Colors.deepPurple),
       ),
       hintStyle: TextStyle(color: Colors.grey[400]),
-      labelStyle: const TextStyle(color: Colors.white),
+      labelStyle: TextStyle(color: Colors.grey[400]),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
     ),
     bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: Colors.grey[800],
