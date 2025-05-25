@@ -370,7 +370,9 @@ class UserService {
       print('开始获取用户回答列表'); // 添加调试日志
       final response = await _dio.get(
         '${ApiConstants.userActiveAnswers}?username=$username',
-        options: Options(headers: request?.toHeaders()),
+        options: Options(
+          headers: request?.toHeaders() ?? await RequestModel.getHeaders(),
+        ),
       );
       print('获取用户回答列表成功: ${response.data}'); // 添加调试日志
       return response.data;
@@ -382,14 +384,16 @@ class UserService {
 
   // 获取用户的问题列表
   Future<Map<String, dynamic>> getUserQuestions(
-    String username, {
-    RequestModel? request,
-  }) async {
+    String username,  {
+        RequestModel? request,
+      }) async {
     try {
       print('开始获取用户问题列表'); // 添加调试日志
       final response = await _dio.get(
         '${ApiConstants.userActiveQuestions}?username=$username',
-        options: Options(headers: request?.toHeaders()),
+        options: Options(
+          headers: request?.toHeaders() ?? await RequestModel.getHeaders(),
+        ),
       );
       print('获取用户问题列表成功: ${response.data}'); // 添加调试日志
       return response.data;
@@ -410,15 +414,15 @@ class UserService {
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int senderId = response1.data['data']['id'];
-
       // 获取第二个用户的ID
       final response2 = await _dio.get(
         ApiConstants.userInfo.replaceAll('{username}', username2),
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int receiverId = response2.data['data']['id'];
-
       // 获取双方之间的消息
+      print(senderId);
+      print(receiverId);
       final responseMessages = await _dio.get(
         'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId',
         options: Options(headers: await RequestModel.getHeaders()),
@@ -444,14 +448,14 @@ class UserService {
   }
   Future<void> addMessage(String name, String content) async {
     try {
+      print(name);
   // 第一步：获取目标用户ID
-      final dio = Dio();
+      final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
       final response = await dio.get(
-        ApiConstants.userInfo.replaceAll('{username}', name),
+        '/api/hangzd/user/$name',
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int toId = response.data['data']['id'];
-
   // 第二步：获取当前用户token和username
       final prefs = await SharedPreferences.getInstance();
       final String token = prefs.getString('token') ?? '';
@@ -511,6 +515,9 @@ class UserService {
       });
 
       request.headers.addAll(headers);
+      print('准备点赞：target=$targetUsername, value=$value');
+      print('请求头: $headers');
+      print('请求体: ${request.body}');
 
       final response = await request.send();
 
@@ -525,4 +532,6 @@ class UserService {
       rethrow;
     }
   }
+
+
 }
