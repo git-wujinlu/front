@@ -1,4 +1,5 @@
 import 'package:demo1/pages/home/AskPage.dart';
+import 'package:demo1/pages/home/SquarePage.dart';
 import 'package:demo1/pages/home/MessagePage.dart';
 import 'package:demo1/pages/home/SelfPage.dart';
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _pageIndex = 0;
-  final List _pages = [AskPage(), MessagePage(), SelfPage()];
+  final List _pages = [AskPage(), SquarePage(), MessagePage(), SelfPage()];
 
   void _changePageIndex(int index) {
     setState(() {
@@ -36,7 +37,7 @@ class _HomePageState extends State<HomePage> {
       body: PageView(
         controller: _pageControoller,
         onPageChanged: _changePageIndex,
-        children: [AskPage(), MessagePage(), SelfPage()],
+        children: [AskPage(), SquarePage(), MessagePage(), SelfPage()],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _pageIndex,
@@ -47,12 +48,13 @@ class _HomePageState extends State<HomePage> {
             curve: Curves.easeInOut,
           );
         },
-        selectedItemColor:
-            themeProvider.isDarkMode
-                ? Colors.deepPurple.shade300
-                : Colors.deepPurple.shade700,
+        selectedItemColor: themeProvider.isDarkMode
+            ? Colors.deepPurple.shade300
+            : Colors.deepPurple.shade700,
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "问答"),
+          BottomNavigationBarItem(icon: Icon(Icons.flag), label: "广场"),
           BottomNavigationBarItem(icon: Icon(Icons.mail), label: "消息"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "我的"),
         ],
