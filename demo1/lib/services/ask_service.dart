@@ -16,7 +16,7 @@ class AskService {
       'Content-Type': 'application/json',
     };
     var response = await http.post(
-      Uri.parse('http://192.168.107.1:4999/recommend'),
+      Uri.parse('http://43.143.231.162:4999/recommend'),
       headers: headers,
       body: json.encode({"question": s}),
     );

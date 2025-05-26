@@ -16,7 +16,7 @@ class SquarePage extends StatefulWidget {
 
 class _SquarePageState extends State<SquarePage> {
   Future<List<dynamic>>? _questionsList;
-  List<int> ids=[];
+  List<int> ids = [];
 
   Future<List<dynamic>> getQuestions() async {
     return [
@@ -69,6 +69,10 @@ class _SquarePageState extends State<SquarePage> {
     //     },
     //   ),
     // );
+  }
+
+  Future<dynamic> getQuestion(int id) async {
+    return 1;
   }
 
   @override
@@ -135,9 +139,28 @@ class _SquarePageState extends State<SquarePage> {
                                   context: context,
                                   builder: (context) {
                                     return AlertDialog(
-                                      title:
-                                          Text('标题：${snapshot.data?[index]['title']}'),
-                                      content:Text('这里是问题具体内容，我还不知道写什么'),
+                                      title: Text(
+                                          '标题：${snapshot.data?[index]['title']}'),
+                                      content: SingleChildScrollView(
+                                          child: ListView.builder(
+                                        itemBuilder: (context, index) {
+                                          return Text(index.toString());
+                                        },
+                                        itemCount: 2,
+                                      )
+                                          // child: FutureBuilder(
+                                          //     future: getQuestion(ids[index]),
+                                          //     builder: (context, snapshot) {
+                                          //       if (snapshot.connectionState ==
+                                          //           ConnectionState.waiting) {
+                                          //         return CircularProgressIndicator();
+                                          //       } else if (snapshot.hasData) {
+                                          //         return Text("详情");
+                                          //       } else {
+                                          //         return Text("错误");
+                                          //       }
+                                          //     }),
+                                          ),
                                       actions: [
                                         TextButton(
                                           child: Text(
