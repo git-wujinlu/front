@@ -16,6 +16,7 @@ class CommentPage extends StatefulWidget {
 }
 
 class _CommentPageState extends State<CommentPage> {
+  bool _isPublic = true; // 默认是公开
   int? _lastRating; // 记录最后一次点击，1表示好评，-1表示差评
 
   void _submitRating() async {
@@ -32,6 +33,36 @@ class _CommentPageState extends State<CommentPage> {
     Navigator.pop(context);
     Navigator.pop(context);
   }
+
+  Widget _buildSwitchTile() {
+    return GestureDetector(
+      onTap: () {
+        setState(() => _isPublic = !_isPublic);
+      },
+      child: Container(
+        width: 60,
+        height: 30,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: _isPublic ? Colors.deepPurple : Colors.grey.shade300,
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          alignment: _isPublic ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 22,
+            height: 22,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +96,7 @@ class _CommentPageState extends State<CommentPage> {
           ),
           Container(
             color: Theme.of(context).cardTheme.color,
-            height: 0.275 * height,
+            height: 0.225 * height,
           ),
           SizedBox(
             height: 0.05 * height,
@@ -122,7 +153,31 @@ class _CommentPageState extends State<CommentPage> {
               ),
             ),
           ),
-          Container(height: 0.03 * height, color: Theme.of(context).cardTheme.color),
+          Container(height: 0.01 * height, color: Theme.of(context).cardTheme.color),
+          SizedBox(
+            height: 0.06 * height,
+            child: Container(
+              color: Theme.of(context).cardTheme.color,
+              padding: EdgeInsets.symmetric(horizontal: 0.1 * width),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Spacer(flex: 2),
+                  Text(
+                    '问题公开：',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const Spacer(flex: 1),
+                  _buildSwitchTile(),
+                  const Spacer(flex: 2),
+                ],
+              ),
+            ),
+          ),
+          Container(height: 0.02 * height, color: Theme.of(context).cardTheme.color),
           Container(
             height: 0.05 * height,
             color: Theme.of(context).cardTheme.color,
@@ -152,3 +207,5 @@ class _CommentPageState extends State<CommentPage> {
     );
   }
 }
+
+

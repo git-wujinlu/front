@@ -38,8 +38,8 @@ class _ConversationPageState extends State<ConversationPage> {
     _myUsername = prefs.getString('username') ?? '';
 
     try {
-      final messagesResponse2 = await UserService().getMessagesBetweenUsers(widget.name,_myUsername);
       final messagesResponse1 = await UserService().getMessagesBetweenUsers(_myUsername,widget.name);
+      final messagesResponse2 = await UserService().getMessagesBetweenUsers(widget.name,_myUsername);
       final data1 = messagesResponse1['data'] as List;
       final data2 = messagesResponse2['data'] as List;
 
@@ -202,7 +202,7 @@ class _ConversationPageState extends State<ConversationPage> {
             ),
             SizedBox(height: 0.02 * height),
             SizedBox(
-              height: 0.05 * height,
+              height: 0.18 * height,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 0.05 * width),
                 child: Row(
@@ -210,20 +210,18 @@ class _ConversationPageState extends State<ConversationPage> {
                     Expanded(
                       child: Align(
                         alignment: Alignment.bottomCenter,
-                        child: TextField(
-                          controller: _textController,
-                          keyboardType: TextInputType.multiline,
-                          minLines: 1,
-                          maxLines: null,
-                          decoration: InputDecoration(
-                            hintText: '输入消息',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
-                        ),
+                  child: TextField(
+                    controller: _textController,
+                    decoration: InputDecoration(
+                      hintText: '输入消息',
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12), // 设置圆角半径
                       ),
+                    ),
+                    maxLines: null,
+                  ),
+                      )
                     ),
                     const SizedBox(width: 8),
                     Align(

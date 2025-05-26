@@ -399,9 +399,34 @@ class _ProfilePageState extends State<ProfilePage> {
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon),
+          prefixIcon: Icon(
+            icon,
+            color:
+                Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          ),
           labelText: label,
-          border: const OutlineInputBorder(),
+          labelStyle: TextStyle(
+            color:
+                Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).dividerColor,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(
+              color: Theme.of(context).primaryColor,
+            ),
+          ),
+        ),
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyMedium?.color,
         ),
         keyboardType: keyboardType,
         maxLines: maxLines,
@@ -411,11 +436,21 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildTag(String tag) {
     return Chip(
-      label: Text(tag),
+      label: Text(
+        tag,
+        style: TextStyle(
+          color: Theme.of(context).textTheme.bodyMedium?.color,
+        ),
+      ),
+      backgroundColor: Theme.of(context).cardTheme.color,
       onDeleted: () {
         _removeTag(tag);
       },
-      deleteIcon: const Icon(Icons.close, size: 18),
+      deleteIcon: Icon(
+        Icons.close,
+        size: 18,
+        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+      ),
     );
   }
 
@@ -426,12 +461,30 @@ class _ProfilePageState extends State<ProfilePage> {
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text('添加标签'),
+              backgroundColor: Theme.of(context).cardTheme.color,
+              title: Text(
+                '添加标签',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
               content: TextField(
                 controller: _tagController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '标签名称',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  labelStyle: TextStyle(
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withOpacity(0.6),
+                  ),
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
               actions: [
@@ -439,14 +492,28 @@ class _ProfilePageState extends State<ProfilePage> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: const Text('取消'),
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withOpacity(0.6),
+                    ),
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
                     _addTag();
                     Navigator.pop(context);
                   },
-                  child: const Text('添加'),
+                  child: Text(
+                    '添加',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
                 ),
               ],
             );
@@ -457,12 +524,29 @@ class _ProfilePageState extends State<ProfilePage> {
         label: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.add, size: 18),
+            Icon(
+              Icons.add,
+              size: 18,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.color
+                  ?.withOpacity(0.6),
+            ),
             const SizedBox(width: 4),
-            Text('添加标签',
-                style: TextStyle(color: Theme.of(context).primaryColor)),
+            Text(
+              '添加标签',
+              style: TextStyle(
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.color
+                    ?.withOpacity(0.6),
+              ),
+            ),
           ],
         ),
+        backgroundColor: Theme.of(context).cardTheme.color,
         deleteIcon: const SizedBox.shrink(),
       ),
     );

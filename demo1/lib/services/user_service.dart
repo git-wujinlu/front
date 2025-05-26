@@ -50,7 +50,8 @@ class UserService {
   Future<bool> login(String username, String password, String code) async {
     Map<String, String> headers = await RequestModel.getHeaders();
     headers['cookie'] = CaptchaOwner!;
-    print(headers);
+    print('登录请求头: $headers');
+
     final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.login}'),
         body: json.encode({
@@ -59,6 +60,11 @@ class UserService {
           "code": code,
         }),
         headers: headers);
+
+    print('登录响应状态码: ${response.statusCode}');
+    print('登录响应体: ${response.body}');
+    print('解析后的响应数据: ${jsonDecode(response.body)}');
+
     if (response.statusCode == 200) {
       print(jsonDecode(response.body));
       final prefs = await SharedPreferences.getInstance();
@@ -141,8 +147,7 @@ class UserService {
   Future<Map<String, dynamic>> getOtherUserByUsername(String username) async {
     try {
       final headers = await RequestModel.getHeaders();
-      final url =
-      ApiConstants.userInfo.replaceAll('{username}', username);
+      final url = ApiConstants.userInfo.replaceAll('{username}', username);
       print('调用用户信息接口: ${ApiConstants.baseUrl}$url');
       print('请求 headers: $headers');
 
@@ -171,6 +176,7 @@ class UserService {
       throw Exception('获取用户信息失败：$e');
     }
   }
+
   // 获取用户标签
   Future<Map<String, dynamic>> getUserTags(
     String username, {
@@ -358,8 +364,7 @@ class UserService {
   }
 
   // 获取用户的回答列表
-  Future<Map<String, dynamic>> getUserAnswers(
-    String username) async {
+  Future<Map<String, dynamic>> getUserAnswers(String username) async {
     try {
       print('开始获取用户回答列表'); // 添加调试日志
       final response = await _dio.get(
@@ -376,7 +381,9 @@ class UserService {
 
   // 获取用户的问题列表
   Future<Map<String, dynamic>> getUserQuestions(
-    String username) async {
+    String username, {
+    RequestModel? request,
+  }) async {
     try {
       print('开始获取用户问题列表'); // 添加调试日志
       final response = await _dio.get(
@@ -392,9 +399,9 @@ class UserService {
   }
 
   Future<Map<String, dynamic>> getMessagesBetweenUsers(
-      String username1,
-      String username2,
-      ) async {
+    String username1,
+    String username2,
+  ) async {
     try {
       // 获取第一个用户的ID
       final response1 = await _dio.get(
@@ -464,22 +471,23 @@ class UserService {
     prefs.remove('username');
     prefs.remove('token');
   }
+
   Future<void> addMessage(String name, String content) async {
     try {
       print(name);
-  // 第一步：获取目标用户ID
+      // 第一步：获取目标用户ID
       final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
       final response = await dio.get(
         '/api/hangzd/user/$name',
         options: Options(headers: await RequestModel.getHeaders()),
       );
       final int toId = response.data['data']['id'];
-  // 第二步：获取当前用户token和username
+      // 第二步：获取当前用户token和username
       final prefs = await SharedPreferences.getInstance();
       final String token = prefs.getString('token') ?? '';
       final String username = prefs.getString('username') ?? '';
 
-  // 第三步：构造HTTP请求发送消息
+      // 第三步：构造HTTP请求发送消息
       final url = Uri.parse('http://43.143.231.162:8000/api/hangzd/message');
       final request = http.Request('POST', url);
       request.body = json.encode({
@@ -508,7 +516,6 @@ class UserService {
       rethrow;
     }
   }
-
 
   Future<void> like(String targetUsername, int value) async {
     try {
@@ -550,6 +557,4 @@ class UserService {
       rethrow;
     }
   }
-
-
 }

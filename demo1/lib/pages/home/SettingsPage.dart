@@ -284,15 +284,31 @@ class _SettingsPageState extends State<SettingsPage> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('修改密码'),
+          backgroundColor: Theme.of(context).cardTheme.color,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          title: Text(
+            '修改密码',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: _oldPasswordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '旧密码',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
                 obscureText: true,
                 enabled: !_isLoading,
@@ -300,9 +316,14 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 16),
               TextField(
                 controller: _newPasswordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '新密码',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
                 obscureText: true,
                 enabled: !_isLoading,
@@ -310,9 +331,14 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 16),
               TextField(
                 controller: _confirmPasswordController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: '确认新密码',
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
                 obscureText: true,
                 enabled: !_isLoading,
@@ -326,7 +352,16 @@ class _SettingsPageState extends State<SettingsPage> {
                   : () {
                       Navigator.of(context).pop();
                     },
-              child: const Text('取消'),
+              child: Text(
+                '取消',
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withOpacity(0.6),
+                ),
+              ),
             ),
             TextButton(
               onPressed: _isLoading
@@ -408,14 +443,22 @@ class _SettingsPageState extends State<SettingsPage> {
                       }
                     },
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Theme.of(context).primaryColor,
+                        ),
                       ),
                     )
-                  : const Text('确认'),
+                  : Text(
+                      '确认',
+                      style: TextStyle(
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
             ),
           ],
         ),
