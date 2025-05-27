@@ -8,11 +8,13 @@ import 'package:demo1/services/user_service.dart';
 class ConversationPage extends StatefulWidget {
   final bool fromQuestion;
   final String name;
+  final String conversationId;
 
   const ConversationPage({
     super.key,
     required this.fromQuestion,
     required this.name,
+    required this.conversationId,
   });
 
   @override
@@ -38,8 +40,8 @@ class _ConversationPageState extends State<ConversationPage> {
     _myUsername = prefs.getString('username') ?? '';
 
     try {
-      final messagesResponse1 = await UserService().getMessagesBetweenUsers(_myUsername,widget.name);
-      final messagesResponse2 = await UserService().getMessagesBetweenUsers(widget.name,_myUsername);
+      final messagesResponse1 = await UserService().getMessagesBetweenUsers(_myUsername,widget.name,widget.conversationId);
+      final messagesResponse2 = await UserService().getMessagesBetweenUsers(widget.name,_myUsername,widget.conversationId);
       final data1 = messagesResponse1['data'] as List;
       final data2 = messagesResponse2['data'] as List;
 
@@ -104,7 +106,6 @@ class _ConversationPageState extends State<ConversationPage> {
     if (text.isEmpty) return;
     try {
       await UserService().addMessage(widget.name, text);
-      UserService().getMessagesBetweenUsers("c", "b");
       setState(() {
         _messages.add({'text': text, 'isMe': true});
         _textController.clear();

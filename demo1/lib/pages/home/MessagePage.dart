@@ -1,7 +1,6 @@
+import 'package:demo1/services/user_service.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-import '../../services/user_service.dart';
+import 'package:demo1/services/ask_service.dart';
 import 'ConversationPage.dart';
 
 class MessagePage extends StatefulWidget {
@@ -13,59 +12,45 @@ class MessagePage extends StatefulWidget {
 
 class _MessagePageState extends State<MessagePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<dynamic> activeQuestions = [];
-  List<dynamic> activeAnswers = [];
-  bool isLoadingQuestions = true;
-  bool isLoadingAnswers = true;
-
-  final UserService _userService = UserService(); // 实例化 UserService
+  List<dynamic> questions = [];
+  List<dynamic> answers = [];
+  final AskService askService = AskService(); // 实例化 UserService
+  final UserService userService = UserService();
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     // Load active questions when the page is first initialized
-    getActiveQuestions();
-    getActiveAnswers();
+    getConversations();
   }
 
   // Get active questions
-  Future<void> getActiveQuestions() async {
-    final prefs = await SharedPreferences.getInstance();
-    String username = prefs.getString('username') ?? '';
-
+  Future<void> getConversations() async {
     try {
-      final response = await _userService.getUserQuestions(username);
+      final response = await askService.getConversationList();
+      List<dynamic> tempQuestions = [];
+      List<dynamic> tempAnswers = [];
+
+      for (var item in response) {
+        int questionId = item['questionId'];
+        item['question'] = await askService.getQuestionById(questionId);
+        if (item['user1'] == -1) {
+          tempQuestions.add(item);
+        } else {
+          tempAnswers.add(item);
+        }
+      }
+
       setState(() {
-        activeQuestions = response['data'];
-        isLoadingQuestions = false;
+        questions = tempQuestions;
+        answers = tempAnswers;
       });
     } catch (e) {
       print('获取用户问题失败: $e');
-      setState(() {
-        isLoadingQuestions = false;
-      });
     }
   }
 
-  // Get active answers
-  Future<void> getActiveAnswers() async {
-    final prefs = await SharedPreferences.getInstance();
-    String username = prefs.getString('username') ?? '';
-
-    try {
-      final response = await _userService.getUserAnswers(username);
-      setState(() {
-        activeAnswers = response['data'];
-        isLoadingAnswers = false;
-      });
-    } catch (e) {
-      print('获取用户回答失败: $e');
-      setState(() {
-        isLoadingAnswers = false;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,8 +113,8 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    MyQuestionsTab(activeQuestions: activeQuestions, isLoading: isLoadingQuestions),
-                    MyAnswersTab(activeAnswers: activeAnswers, isLoading: isLoadingAnswers),
+                    MyQuestionsTab(activeQuestions: questions),
+                    MyAnswersTab(activeAnswers: answers),
                   ],
                 ),
               ),
@@ -144,15 +129,10 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
 
 class MyQuestionsTab extends StatelessWidget {
   final List<dynamic> activeQuestions;
-  final bool isLoading;
-
-  const MyQuestionsTab({super.key, required this.activeQuestions, required this.isLoading});
+  const MyQuestionsTab({super.key, required this.activeQuestions,});
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
     if (activeQuestions.isEmpty) {
       return const Center(
@@ -171,8 +151,8 @@ class MyQuestionsTab extends StatelessWidget {
       itemCount: activeQuestions.length,
       itemBuilder: (context, index) {
         var question = activeQuestions[index];
-        String title = question['title'] ?? '无标题';
-        String content = question['content'] ?? '无内容';
+        String title =  question['question']['title'];
+        String content = question['question']['content'];
         String avatar = question['images'] != null && question['images'].isNotEmpty
             ? question['images'][0]
             : 'assets/img.png'; // 默认头像
@@ -181,8 +161,8 @@ class MyQuestionsTab extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) =>  ConversationPage(fromQuestion: true,name: question['username'],),
+                MaterialPageRoute(
+                builder: (context) =>  ConversationPage(fromQuestion: true,name: question['user2'].toString(),conversationId: question['id'].toString(),),
               ),
             );
           },
@@ -249,15 +229,10 @@ class MyQuestionsTab extends StatelessWidget {
 
 class MyAnswersTab extends StatelessWidget {
   final List<dynamic> activeAnswers;
-  final bool isLoading;
-
-  const MyAnswersTab({super.key, required this.activeAnswers, required this.isLoading});
+  const MyAnswersTab({super.key, required this.activeAnswers});
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
 
     if (activeAnswers.isEmpty) {
       return const Center(child: Text(
@@ -273,8 +248,8 @@ class MyAnswersTab extends StatelessWidget {
       itemCount: activeAnswers.length,
       itemBuilder: (context, index) {
         var answer = activeAnswers[index];
-        String title = answer['title'] ?? '无标题';
-        String content = answer['content'] ?? '无内容';
+        String title = answer['question']['title'];
+        String content = answer['question']['content'];
         String avatar = answer['images'] != null && answer['images'].isNotEmpty
             ? answer['images'][0]
             : 'assets/img.png'; // 默认头像
@@ -284,7 +259,7 @@ class MyAnswersTab extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ConversationPage(fromQuestion: false,name: answer['username'],),
+                builder: (context) => ConversationPage(fromQuestion: false,name: answer['user1'].toString(),conversationId: answer['id'].toString(),),
               ),
             );
           },
