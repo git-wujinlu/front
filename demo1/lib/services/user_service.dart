@@ -519,6 +519,7 @@ class UserService {
   Future<Map<String, dynamic>> getMessagesBetweenUsers(
     String username1,
     String username2,
+    String conversationId,
   ) async {
     try {
       // 获取第一个用户的ID
@@ -539,7 +540,7 @@ class UserService {
       print(senderId);
       print(receiverId);
       final responseMessages = await _dio.get(
-        'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId',
+        'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId/conv/$conversationId',
         options: Options(headers: await RequestModel.getHeaders()),
       );
 
@@ -560,7 +561,7 @@ class UserService {
     }
     final response = await http.get(
       Uri.parse(
-          '${ApiConstants.baseUrl}${ApiConstants.checkLogin}?username=${username}&token=${token}'),
+          '${ApiConstants.baseUrl}${ApiConstants.checkLogin}?username=$username&token=$token'),
       headers: await RequestModel.getHeaders(),
     );
     if (response.statusCode == 200) {
