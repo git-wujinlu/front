@@ -29,8 +29,7 @@ class AskService {
   }
 
   Future<bool> askQuestion(String title, String content, List<int> ids) async {
-    final _userService = new UserService();
-    int id = (await _userService.getUserByUsername())['data']['id'];
+    print('开始提问');
     var response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.question}'),
         headers: await RequestModel.getHeaders(),
@@ -42,22 +41,42 @@ class AskService {
         }));
     if (jsonDecode(response.body)['success'] == true) {
       print('创建问题结果：${jsonDecode(response.body)}');
+      int questionId=jsonDecode(response.body)['data']['id'];
       var response2 = await http.put(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.askUsers}'),
         headers: await RequestModel.getHeaders(),
         body: json.encode({
-          // 'aid': id,
           'questionId': jsonDecode(response.body)['data'],
           'userIds': ids,
         }),
       );
       if (jsonDecode(response2.body)['success'] == true) {
         print('发送问题结果：${jsonDecode(response2.body)}');
+        for(int i=0;i<ids.length;++i){
+          makeConversation(ids[i], questionId);
+        }
         return true;
       }
       print('发送问题error: ${jsonDecode(response2.body)}');
     }
     print('创建问题error: ${jsonDecode(response.body)}');
+    return false;
+  }
+
+  Future<bool> makeConversation(int user2, int questionId) async {
+    var response = await http.post(
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conversation}'),
+      headers: await RequestModel.getHeaders(),
+      body: json.encode({
+        'user2': user2,
+        'questionId': questionId,
+      }),
+    );
+    if (jsonDecode(response.body)['success'] == true) {
+      print('向$user2 发送问题成功：${jsonDecode(response.body)}');
+      return true;
+    }
+    print('向$user2 发送问题error： ${jsonDecode(response.body)}');
     return false;
   }
 }

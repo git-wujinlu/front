@@ -21,6 +21,7 @@ class ApiConstants {
   static const String question = '/api/hangzd/question';
   static const String askUsers= '$user/ask';
   static const String answers = '/api/hangzd/answers';
+  static const String conversation = '/api/hangzd/conversation';
 
   // 设置相关接口
   static const String settings = '/api/hangzd/settings';

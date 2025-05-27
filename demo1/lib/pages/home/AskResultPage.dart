@@ -303,13 +303,13 @@ class _AskResultPageState extends State<AskResultPage> {
                                 style: TextStyle(color: Colors.blue),
                               ),
                               onPressed: () async {
-                                // if (await _askService.askQuestion(
-                                //     _searchController.text,
-                                //     _contentController.text,
-                                //     getSelectedId())) {
+                                if (await _askService.askQuestion(
+                                    _searchController.text,
+                                    _contentController.text,
+                                    getSelectedId())) {
                                   Navigator.pop(context);
                                   Navigator.pop(context);
-                                // }
+                                }
                               },
                             ),
                           ],
