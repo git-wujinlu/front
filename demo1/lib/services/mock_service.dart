@@ -277,6 +277,44 @@ class MockService {
                       ),
                     );
                   }
+                } else if (options.path.contains('/password')) {
+                  // 处理密码修改请求
+                  try {
+                    print('处理密码修改请求'); // 添加日志
+                    final data = options.data as Map<String, dynamic>;
+                    print('密码修改数据: $data'); // 添加密码数据日志
+
+                    // 在实际应用中这里会验证旧密码是否正确，并更新密码
+                    // 这里我们模拟这个过程成功了
+                    print('密码修改成功'); // 添加成功日志
+
+                    return handler.resolve(
+                      Response(
+                        requestOptions: options,
+                        data: {
+                          'code': '0',
+                          'message': null,
+                          'data': null,
+                          'success': true,
+                        },
+                        statusCode: 200,
+                      ),
+                    );
+                  } catch (e) {
+                    print('处理密码修改时出错: $e'); // 添加错误日志
+                    return handler.reject(
+                      DioException(
+                        requestOptions: options,
+                        error: '处理密码修改失败: $e',
+                        type: DioExceptionType.unknown,
+                        response: Response(
+                          requestOptions: options,
+                          statusCode: 400,
+                          data: {'message': '处理密码修改失败: $e'},
+                        ),
+                      ),
+                    );
+                  }
                 }
               }
             } else if (options.path.contains('/api/hangzd/user/stats')) {

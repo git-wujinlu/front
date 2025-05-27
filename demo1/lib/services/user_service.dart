@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:math';
+import 'package:http/http.dart' as http;
 
 import 'package:dio/dio.dart';
 import 'package:http/http.dart' as http;
@@ -7,7 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../models/request_model.dart';
 import '../utils/api_error_handler.dart';
-import 'mock_service.dart';
 
 class UserService {
   final Dio _dio;
@@ -16,8 +17,20 @@ class UserService {
   // 添加静态变量用于存储最新的用户信息
   static Map<String, dynamic>? _latestUserInfo;
 
-  UserService() : _dio = MockService.dio {
-    // 移除 _clearOldData 调用
+  // 使用真实后端而不是Mock服务
+  UserService()
+      : _dio = Dio(
+          BaseOptions(
+            baseUrl: ApiConstants.baseUrl,
+            connectTimeout: Duration(milliseconds: ApiConstants.connectTimeout),
+            receiveTimeout: Duration(milliseconds: ApiConstants.receiveTimeout),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          ),
+        ) {
+    print('初始化UserService，使用真实后端: ${ApiConstants.baseUrl}');
   }
 
   Future<void> _clearOldData() async {
@@ -29,21 +42,49 @@ class UserService {
 
   // 获取登录验证码
   Future<Uint8List> captcha() async {
-    final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.captcha}'),
-        headers: await RequestModel.getHeaders());
+    try {
+      print('开始请求验证码 (真实后端)');
+      final headers = await RequestModel.getHeaders();
+      print('验证码请求头: ${headers.keys}'); // 只打印键名，不打印敏感信息
 
-    // 添加响应内容打印
-    print('验证码响应状态码: ${response.statusCode}');
-    print('验证码响应头: ${response.headers}');
-    print('验证码响应体: ${response.body}');
+      final url = '${ApiConstants.baseUrl}${ApiConstants.captcha}';
+      print('请求验证码URL: $url');
 
-    // 添加空值检查
-    final setCookie = response.headers['set-cookie'];
-    if (setCookie != null) {
-      CaptchaOwner = setCookie.substring(0, setCookie.indexOf(';'));
+      final response = await http.get(Uri.parse(url), headers: headers);
+
+      // 添加响应内容打印
+      print('验证码响应状态码: ${response.statusCode}');
+      print('验证码响应头键: ${response.headers.keys.toList()}');
+
+      // 检查响应状态
+      if (response.statusCode != 200) {
+        print('验证码请求失败，状态码: ${response.statusCode}');
+        throw Exception('获取验证码失败，请重试 (状态码: ${response.statusCode})');
+      }
+
+      // 处理Cookie
+      final setCookie = response.headers['set-cookie'];
+      if (setCookie != null && setCookie.contains(';')) {
+        CaptchaOwner = setCookie.substring(0, setCookie.indexOf(';'));
+        print(
+            '已设置验证码Cookie: ${CaptchaOwner?.substring(0, min(10, CaptchaOwner?.length ?? 0))}...');
+      } else {
+        print('未找到验证码Cookie，响应头: ${response.headers}');
+        // 如果没有cookie，尝试从响应体中获取内容
+        if (response.bodyBytes.isNotEmpty) {
+          print('无Cookie但有响应数据，尝试使用图片数据');
+          return response.bodyBytes; // 仍然返回图片数据
+        }
+        throw Exception('验证码请求失败，未获取到必要信息');
+      }
+
+      print('验证码获取成功，返回图片数据 (${response.bodyBytes.length} 字节)');
+      return response.bodyBytes;
+    } catch (e) {
+      print('获取验证码出错: $e');
+      // 重新抛出异常，让上层处理
+      throw Exception('获取验证码失败: $e');
     }
-    return response.bodyBytes;
   }
 
   // 登录
@@ -259,6 +300,12 @@ class UserService {
             _latestUserInfo!['avatar'] = avatar;
           }
         }
+
+        // 更新SharedPreferences中的用户名
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('username', newUsername);
+        print('更新本地存储的用户名: $oldUsername -> $newUsername');
+
         return response.data;
       } else {
         throw Exception(response.data['message'] ?? '更新失败');
@@ -327,38 +374,109 @@ class UserService {
     RequestModel? request,
   }) async {
     try {
-      print('开始修改密码'); // 添加调试日志
-      print(
-        '请求参数: oldPassword=$oldPassword, newPassword=$newPassword',
-      ); // 添加参数日志
+      print('==== 开始修改密码流程 ====');
+      print('密码长度 - 旧密码: ${oldPassword.length}, 新密码: ${newPassword.length}');
 
+      // 在修改密码前，先获取当前用户信息，用于日志记录
+      final prefs = await SharedPreferences.getInstance();
+      final currentUsername = prefs.getString('username');
+      print('当前登录用户: $currentUsername');
+
+      // 获取请求头，优先使用传入的request
+      Map<String, dynamic> headers;
+      if (request != null) {
+        headers = request.toHeaders();
+        print('使用传入的请求头: ${headers.keys}'); // 只打印键名不打印值
+      } else {
+        headers = await RequestModel.getHeaders();
+        print('使用默认的请求头: ${headers.keys}'); // 只打印键名不打印值
+      }
+
+      // 添加一个额外的标记，避免缓存问题
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      print(
+          '发送密码修改请求到: ${ApiConstants.baseUrl}${ApiConstants.userPassword}?t=$timestamp');
+
+      // 第一次尝试修改密码
       final response = await _dio.put(
-        ApiConstants.userPassword,
+        '${ApiConstants.userPassword}?t=$timestamp',
         data: {
           'oldPassword': oldPassword,
           'newPassword': newPassword,
         },
         options: Options(
-          headers: request?.toHeaders(),
+          headers: headers,
           contentType: 'application/json',
           validateStatus: (status) => status != null && status < 500,
+          receiveTimeout: Duration(seconds: 15),
+          sendTimeout: Duration(seconds: 15),
         ),
       );
 
-      print('密码修改响应状态码: ${response.statusCode}'); // 添加状态码日志
-      print('密码修改响应数据: ${response.data}'); // 添加响应数据日志
+      print('密码修改响应状态码: ${response.statusCode}');
+
+      // 详细打印响应信息
+      if (response.data != null) {
+        print('响应数据类型: ${response.data.runtimeType}');
+        print('响应success字段: ${response.data['success']}');
+        print('响应完整数据: ${response.data}');
+      }
 
       if (response.statusCode == 200) {
-        return response.data;
+        if (response.data['success'] == true) {
+          print('密码修改成功，服务器已确认');
+
+          // 立即发送第二次请求，确保服务器端处理完成
+          try {
+            print('尝试发送确认请求，确保密码已更新...');
+
+            // 延迟一小段时间，确保服务器处理完第一个请求
+            await Future.delayed(Duration(milliseconds: 500));
+
+            // 再次发送相同的请求
+            final confirmResponse = await _dio.put(
+              '${ApiConstants.userPassword}?t=${DateTime.now().millisecondsSinceEpoch}',
+              data: {
+                'oldPassword': oldPassword,
+                'newPassword': newPassword,
+              },
+              options: Options(
+                headers: headers,
+                contentType: 'application/json',
+                validateStatus: (status) => status != null && status < 500,
+              ),
+            );
+
+            print('确认请求响应: ${confirmResponse.statusCode}');
+            if (confirmResponse.data != null) {
+              print('确认请求响应数据: ${confirmResponse.data}');
+            }
+          } catch (confirmError) {
+            print('确认请求失败，但不影响主流程: $confirmError');
+          }
+
+          print('==== 密码修改完成 ====');
+          return response.data;
+        } else {
+          print('密码修改被服务器拒绝: ${response.data['message']}');
+          throw Exception(response.data['message'] ?? '密码修改失败');
+        }
       } else {
-        throw Exception(response.data['message'] ?? '密码修改失败');
+        print('服务器返回错误状态码: ${response.statusCode}');
+        throw Exception(
+            response.data['message'] ?? '密码修改失败 (状态码: ${response.statusCode})');
       }
     } on DioException catch (e) {
-      print('密码修改失败: ${e.message}'); // 添加错误日志
-      print('错误类型: ${e.type}'); // 添加错误类型日志
+      print('密码修改请求异常: ${e.message}');
+      print('错误类型: ${e.type}');
+      if (e.response != null) {
+        print('错误响应: ${e.response?.data}');
+      }
+      print('==== 密码修改失败 ====');
       throw Exception(ApiErrorHandler.handleError(e));
     } catch (e) {
-      print('未知错误: $e'); // 添加未知错误日志
+      print('密码修改过程中发生未知错误: $e');
+      print('==== 密码修改失败 ====');
       throw Exception('密码修改失败：$e');
     }
   }
@@ -458,18 +576,107 @@ class UserService {
 
   // 登出
   Future<void> logout() async {
-    await _clearOldData();
-    _latestUserInfo = null;
-    final prefs = await SharedPreferences.getInstance();
-    final username = prefs.getString('username');
-    final token = prefs.getString('token');
-    final response = await http.get(
-      Uri.parse(
-          '${ApiConstants.baseUrl}${ApiConstants.logout}?username=${username}&token=${token}'),
-      headers: await RequestModel.getHeaders(),
-    );
-    prefs.remove('username');
-    prefs.remove('token');
+    try {
+      print('==== 开始退出登录流程 ====');
+
+      // 保存当前用户名用于日志记录
+      final prefs = await SharedPreferences.getInstance();
+      final username = prefs.getString('username');
+      final token = prefs.getString('token');
+      print('当前登出用户: $username');
+
+      // 显式地调用服务器端登出，尝试强制使服务器端会话失效
+      if (username != null && token != null) {
+        try {
+          print('尝试调用服务器端登出接口...');
+          // 先使用http直接调用，避免任何问题
+          final httpResponse = await http.post(
+            Uri.parse('${ApiConstants.baseUrl}${ApiConstants.logout}'),
+            headers: {
+              'username': username,
+              'token': token,
+              'Content-Type': 'application/json',
+            },
+          );
+          print('HTTP服务器端登出响应: ${httpResponse.statusCode}');
+
+          // 再使用dio调用一次，双重保险
+          final dioResponse = await _dio.post(
+            '${ApiConstants.baseUrl}/api/hangzd/user/logout',
+            options: Options(
+              headers: {
+                'username': username,
+                'token': token,
+                'Content-Type': 'application/json',
+              },
+              validateStatus: (status) => true, // 接受任何状态码
+            ),
+          );
+          print('DIO服务器端登出响应: ${dioResponse.statusCode}');
+
+          // 最后尝试获取一个新的验证码，进一步刷新服务器状态
+          try {
+            print('尝试获取新验证码，进一步刷新服务器状态...');
+            await captcha();
+            print('验证码获取成功，有助于刷新会话状态');
+          } catch (e) {
+            print('获取验证码失败，但不影响主流程: $e');
+          }
+        } catch (e) {
+          print('服务器端登出请求失败: $e');
+          // 继续处理本地登出，即使服务器请求失败
+        }
+      }
+
+      // 完全重置应用状态
+      UserService.clearCache(); // 清除静态缓存
+      _latestUserInfo = null; // 清除实例缓存
+      CaptchaOwner = null; // 清除验证码 cookie
+
+      // 列出所有可能与用户会话相关的键
+      final keys = prefs.getKeys();
+      print('SharedPreferences中的所有键: $keys');
+
+      // 清除所有与用户相关的数据
+      await prefs.remove('username');
+      await prefs.remove('token');
+      await prefs.remove('last_modified_username');
+      await prefs.remove('last_modified_password');
+
+      // 可选：清除其他可能的用户相关数据
+      if (username != null) {
+        // 清除可能以用户名为前缀的其他数据
+        final userKeys =
+            keys.where((key) => key.startsWith('${username}_')).toList();
+        for (var key in userKeys) {
+          print('清除用户相关数据: $key');
+          await prefs.remove(key);
+        }
+      }
+
+      // 打印清理后的状态
+      final remainingKeys = prefs.getKeys();
+      print('清理后剩余的SharedPreferences键: $remainingKeys');
+      print('登出操作完成，所有本地凭证已移除');
+      print('==== 退出登录完成 ====');
+    } catch (e) {
+      print('退出登录过程中出错: $e');
+      // 再次尝试清除关键数据，确保不会有残留状态
+      try {
+        print('尝试应急清理...');
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('username');
+        await prefs.remove('token');
+        await prefs.remove('last_modified_username');
+        await prefs.remove('last_modified_password');
+        UserService.clearCache();
+        _latestUserInfo = null;
+        CaptchaOwner = null;
+        print('应急清理完成');
+      } catch (secondError) {
+        print('应急清理失败: $secondError');
+      }
+    }
   }
 
   Future<void> addMessage(String name, String content) async {
@@ -555,6 +762,30 @@ class UserService {
     } catch (e) {
       print('发送 like 请求失败: $e');
       rethrow;
+    }
+  }
+
+  // 验证密码修改是否生效
+  Future<bool> verifyPasswordChange({
+    required String username,
+    required String newPassword,
+    required String code,
+  }) async {
+    try {
+      print('==== 开始验证密码修改是否生效 ====');
+      // 尝试使用新密码登录
+      final loginResult = await login(username, newPassword, code);
+
+      if (loginResult) {
+        print('使用新密码登录成功，密码修改已生效');
+        return true;
+      } else {
+        print('使用新密码登录失败，密码修改可能未生效');
+        return false;
+      }
+    } catch (e) {
+      print('验证密码修改时出错: $e');
+      return false;
     }
   }
 }
