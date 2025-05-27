@@ -154,31 +154,40 @@ class _ProfilePageState extends State<ProfilePage> {
       UserService.clearCache();
 
       // 强制刷新一次用户信息，确保标签和后端一致
-      final refreshed = await _userService.getUserByUsername();
-      final refreshedData = refreshed['data'];
-      final refreshedTagsString = refreshedData['tags'] as String? ?? '';
-      final refreshedTagsList = refreshedTagsString.isNotEmpty
-          ? refreshedTagsString
-              .split(',')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList()
-          : <String>[];
+      try {
+        final refreshed = await _userService.getUserByUsername();
+        final refreshedData = refreshed['data'];
+        final refreshedTagsString = refreshedData['tags'] as String? ?? '';
+        final refreshedTagsList = refreshedTagsString.isNotEmpty
+            ? refreshedTagsString
+                .split(',')
+                .map((e) => e.trim())
+                .where((e) => e.isNotEmpty)
+                .toList()
+            : <String>[];
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('保存成功')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存成功，用户信息已更新')),
+        );
 
-      // 更新本地状态
-      setState(() {
-        _userInfo = refreshedData;
-        _oldUsername = refreshedData['username'];
-        _avatarUrl = refreshedData['avatar'];
-        _tags = refreshedTagsList;
-        _selectedImage = null;
-      });
+        // 更新本地状态
+        setState(() {
+          _userInfo = refreshedData;
+          _oldUsername = refreshedData['username']; // 确保本地变量也更新
+          _avatarUrl = refreshedData['avatar'];
+          _tags = refreshedTagsList;
+          _selectedImage = null;
+        });
+      } catch (e) {
+        print('刷新用户信息失败，但基本信息已保存: $e');
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('保存成功，但刷新用户信息失败，请重新登录以确保数据同步')),
+        );
+      }
 
       print('刷新后的标签列表: $_tags'); // 添加调试日志
 

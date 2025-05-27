@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushNamedAndRemoveUntil(
             context,
             '/homepage',
-                (route) => false,
+            (route) => false,
           );
         }
       }
@@ -119,13 +119,13 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void initState() {
-    Future<bool> flag =_userService.checkLogin();
-    flag.then((data){
-      if(data){
+    Future<bool> flag = _userService.checkLogin();
+    flag.then((data) {
+      if (data) {
         Navigator.pushNamedAndRemoveUntil(
           context,
           '/homepage',
-              (route) => false,
+          (route) => false,
         );
       }
     });
@@ -136,9 +136,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final size = MediaQuery
-        .of(context)
-        .size;
+    final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
     return Scaffold(
@@ -170,17 +168,11 @@ class _LoginPageState extends State<LoginPage> {
                     hintText: '用户名',
                     prefixIcon: Icon(
                       Icons.person,
-                      color: Theme
-                          .of(context)
-                          .iconTheme
-                          .color,
+                      color: Theme.of(context).iconTheme.color,
                     ),
                     suffixIcon: IconButton(
                       icon: Icon(Icons.clear),
-                      color: Theme
-                          .of(context)
-                          .iconTheme
-                          .color,
+                      color: Theme.of(context).iconTheme.color,
                       onPressed: _usernameController.clear,
                     ),
                   ),
@@ -229,8 +221,8 @@ class _LoginPageState extends State<LoginPage> {
                       borderSide: BorderSide(
                         color: passwordChecked || nowPage == 0
                             ? themeProvider.isDarkMode
-                            ? Colors.deepPurple.shade700
-                            : Colors.deepPurple.shade300
+                                ? Colors.deepPurple.shade700
+                                : Colors.deepPurple.shade300
                             : Colors.red,
                       ),
                     ),
@@ -238,10 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                     prefixIcon: Icon(
                       Icons.lock,
                       color: passwordChecked || nowPage == 0
-                          ? Theme
-                          .of(context)
-                          .iconTheme
-                          .color
+                          ? Theme.of(context).iconTheme.color
                           : Colors.red,
                     ),
                     suffixIcon: IconButton(
@@ -250,10 +239,7 @@ class _LoginPageState extends State<LoginPage> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                         color: passwordChecked || nowPage == 0
-                            ? Theme
-                            .of(context)
-                            .iconTheme
-                            .color
+                            ? Theme.of(context).iconTheme.color
                             : Colors.red,
                       ),
                       onPressed: () {
@@ -267,149 +253,137 @@ class _LoginPageState extends State<LoginPage> {
               ),
               nowPage == 1
                   ? (Column(
-                children: [
-                  SizedBox(height: 0.03 * height),
-                  Container(
-                    child: TextField(
-                      style: TextStyle(
-                        color: passwordChecked || nowPage == 0
-                            ? Colors.black
-                            : Colors.red,
-                      ),
-                      onChanged: (String s) {
-                        setState(() {
-                          passwordChecked =
-                              s.compareTo(_passwordController.text) == 0;
-                        });
-                      },
-                      textAlignVertical: TextAlignVertical.center,
-                      controller: _passwordCheckController,
-                      obscureText: _obscurePasswordCheck,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(
-                            color: passwordChecked || nowPage == 0
-                                ? Colors.black
-                                : Colors.red,
+                      children: [
+                        SizedBox(height: 0.03 * height),
+                        Container(
+                          child: TextField(
+                            style: TextStyle(
+                              color: passwordChecked || nowPage == 0
+                                  ? Colors.black
+                                  : Colors.red,
+                            ),
+                            onChanged: (String s) {
+                              setState(() {
+                                passwordChecked =
+                                    s.compareTo(_passwordController.text) == 0;
+                              });
+                            },
+                            textAlignVertical: TextAlignVertical.center,
+                            controller: _passwordCheckController,
+                            obscureText: _obscurePasswordCheck,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(
+                                  color: passwordChecked || nowPage == 0
+                                      ? Colors.black
+                                      : Colors.red,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(
+                                  color: passwordChecked || nowPage == 0
+                                      ? Colors.black
+                                      : Colors.red,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                borderSide: BorderSide(
+                                  color: passwordChecked || nowPage == 0
+                                      ? themeProvider.isDarkMode
+                                          ? Colors.deepPurple.shade700
+                                          : Colors.deepPurple.shade300
+                                      : Colors.red,
+                                ),
+                              ),
+                              hintText: '确认密码',
+                              prefixIcon: Icon(
+                                Icons.lock,
+                                color: passwordChecked || nowPage == 0
+                                    ? Theme.of(context).iconTheme.color
+                                    : Colors.red,
+                              ),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePasswordCheck
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
+                                  color: passwordChecked || nowPage == 0
+                                      ? Theme.of(context).iconTheme.color
+                                      : Colors.red,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePasswordCheck =
+                                        !_obscurePasswordCheck;
+                                  });
+                                },
+                              ),
+                            ),
                           ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(
-                            color: passwordChecked || nowPage == 0
-                                ? Colors.black
-                                : Colors.red,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide(
-                            color: passwordChecked || nowPage == 0
-                                ? themeProvider.isDarkMode
-                                ? Colors.deepPurple.shade700
-                                : Colors.deepPurple.shade300
-                                : Colors.red,
-                          ),
-                        ),
-                        hintText: '确认密码',
-                        prefixIcon: Icon(
-                          Icons.lock,
-                          color: passwordChecked || nowPage == 0
-                              ? Theme
-                              .of(context)
-                              .iconTheme
-                              .color
-                              : Colors.red,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePasswordCheck
-                                ? Icons.visibility_off
-                                : Icons.visibility,
-                            color: passwordChecked || nowPage == 0
-                                ? Theme
-                                .of(context)
-                                .iconTheme
-                                .color
-                                : Colors.red,
-                          ),
-                          onPressed: () {
+                        SizedBox(height: 0.03 * height),
+                        TextField(
+                          onChanged: (String s) {
                             setState(() {
-                              _obscurePasswordCheck =
-                              !_obscurePasswordCheck;
+                              if (s.isEmpty) {
+                                mailChecked = true;
+                              } else {
+                                mailChecked = new RegExp(
+                                  "^([a-z0-9A-Z]+[-|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}\$",
+                                ).hasMatch(s);
+                              }
                             });
                           },
+                          textAlignVertical: TextAlignVertical.center,
+                          controller: _mailController,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color: mailChecked || nowPage == 0
+                                    ? Colors.black
+                                    : Colors.red,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color: mailChecked || nowPage == 0
+                                    ? Colors.black
+                                    : Colors.red,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: BorderSide(
+                                color: mailChecked || nowPage == 0
+                                    ? themeProvider.isDarkMode
+                                        ? Colors.deepPurple.shade700
+                                        : Colors.deepPurple.shade300
+                                    : Colors.red,
+                              ),
+                            ),
+                            hintText: '邮箱',
+                            prefixIcon: Icon(
+                              Icons.mail,
+                              color: mailChecked || nowPage == 0
+                                  ? Theme.of(context).iconTheme.color
+                                  : Colors.red,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(Icons.clear),
+                              color: mailChecked || nowPage == 0
+                                  ? Theme.of(context).iconTheme.color
+                                  : Colors.red,
+                              onPressed: _mailController.clear,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 0.03 * height),
-                  TextField(
-                    onChanged: (String s) {
-                      setState(() {
-                        if (s.isEmpty) {
-                          mailChecked = true;
-                        } else {
-                          mailChecked = new RegExp(
-                            "^([a-z0-9A-Z]+[-|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}\$",
-                          ).hasMatch(s);
-                        }
-                      });
-                    },
-                    textAlignVertical: TextAlignVertical.center,
-                    controller: _mailController,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: mailChecked || nowPage == 0
-                              ? Colors.black
-                              : Colors.red,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: mailChecked || nowPage == 0
-                              ? Colors.black
-                              : Colors.red,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
-                        borderSide: BorderSide(
-                          color: mailChecked || nowPage == 0
-                              ? themeProvider.isDarkMode
-                              ? Colors.deepPurple.shade700
-                              : Colors.deepPurple.shade300
-                              : Colors.red,
-                        ),
-                      ),
-                      hintText: '邮箱',
-                      prefixIcon: Icon(
-                        Icons.mail,
-                        color: mailChecked || nowPage == 0
-                            ? Theme
-                            .of(context)
-                            .iconTheme
-                            .color
-                            : Colors.red,
-                      ),
-                      suffixIcon: IconButton(
-                        icon: Icon(Icons.clear),
-                        color: mailChecked || nowPage == 0
-                            ? Theme
-                            .of(context)
-                            .iconTheme
-                            .color
-                            : Colors.red,
-                        onPressed: _mailController.clear,
-                      ),
-                    ),
-                  ),
-                ],
-              ))
+                      ],
+                    ))
                   : (SizedBox()),
               SizedBox(height: 0.03 * height),
               Row(
@@ -419,16 +393,16 @@ class _LoginPageState extends State<LoginPage> {
                     child: TextField(
                       textAlignVertical: TextAlignVertical.center,
                       controller:
-                      nowPage == 0 ? _captchaController : _codeController,
+                          nowPage == 0 ? _captchaController : _codeController,
                       onSubmitted: nowPage == 0
                           ? (String s) {
-                        _captchaController.text = s;
-                        login();
-                      }
+                              _captchaController.text = s;
+                              login();
+                            }
                           : (String s) {
-                        _codeController.text = s;
-                        signUp();
-                      },
+                              _codeController.text = s;
+                              signUp();
+                            },
                       decoration: InputDecoration(
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -447,17 +421,11 @@ class _LoginPageState extends State<LoginPage> {
                         hintText: '验证码',
                         prefixIcon: Icon(
                           Icons.ad_units,
-                          color: Theme
-                              .of(context)
-                              .iconTheme
-                              .color,
+                          color: Theme.of(context).iconTheme.color,
                         ),
                         suffixIcon: IconButton(
                           icon: Icon(Icons.clear),
-                          color: Theme
-                              .of(context)
-                              .iconTheme
-                              .color,
+                          color: Theme.of(context).iconTheme.color,
                           onPressed: nowPage == 0
                               ? _captchaController.clear
                               : _codeController.clear,
@@ -469,61 +437,61 @@ class _LoginPageState extends State<LoginPage> {
                     flex: 4,
                     child: nowPage == 0
                         ? GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          captcha = _userService.captcha();
-                        });
-                      },
-                      child: Container(
-                        margin: EdgeInsets.only(left: 0.02 * width),
-                        child: FutureBuilder(
-                            future: captcha,
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return Text('');
-                              } else if(snapshot.hasData) {
-                                return Image.memory(snapshot.data!);
-                              }else {
-                                return Text('加载失败');
-                              }
-                            }),
-                      ),
-                    )
-                        : GestureDetector(
-                      onTap: sendCode,
-                      child: Container(
-                        padding: EdgeInsets.only(
-                          top: 0.01 * height,
-                          bottom: 0.01 * height,
-                        ),
-                        margin: EdgeInsets.only(left: 0.02 * width),
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(
-                                0.08,
-                              ), // 阴影颜色
-                              offset: Offset(1, 1), // 阴影偏移
-                              spreadRadius: 0.1, // 阴影扩散度
+                            onTap: () {
+                              setState(() {
+                                captcha = _userService.captcha();
+                              });
+                            },
+                            child: Container(
+                              margin: EdgeInsets.only(left: 0.02 * width),
+                              child: FutureBuilder(
+                                  future: captcha,
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return Text('');
+                                    } else if (snapshot.hasData) {
+                                      return Image.memory(snapshot.data!);
+                                    } else {
+                                      return Text('加载失败');
+                                    }
+                                  }),
                             ),
-                          ],
-                          // border: Border.all(width: 1),
-                          // borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            codeCollDown ? '获取验证码' : '$codeTime秒后发送',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: codeCollDown
-                                  ? Colors.black
-                                  : Colors.grey[600],
+                          )
+                        : GestureDetector(
+                            onTap: sendCode,
+                            child: Container(
+                              padding: EdgeInsets.only(
+                                top: 0.01 * height,
+                                bottom: 0.01 * height,
+                              ),
+                              margin: EdgeInsets.only(left: 0.02 * width),
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(
+                                      0.08,
+                                    ), // 阴影颜色
+                                    offset: Offset(1, 1), // 阴影偏移
+                                    spreadRadius: 0.1, // 阴影扩散度
+                                  ),
+                                ],
+                                // border: Border.all(width: 1),
+                                // borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  codeCollDown ? '获取验证码' : '$codeTime秒后发送',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: codeCollDown
+                                        ? Colors.black
+                                        : Colors.grey[600],
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -545,8 +513,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           color: nowPage == 0
                               ? themeProvider.isDarkMode
-                              ? Colors.deepPurple.shade700
-                              : Colors.deepPurple.shade300
+                                  ? Colors.deepPurple.shade700
+                                  : Colors.deepPurple.shade300
                               : Colors.white,
                         ),
                         child: Center(
@@ -556,8 +524,8 @@ class _LoginPageState extends State<LoginPage> {
                               color: nowPage == 0
                                   ? Colors.grey.shade300
                                   : themeProvider.isDarkMode
-                                  ? Colors.deepPurple.shade700
-                                  : Colors.deepPurple.shade300,
+                                      ? Colors.deepPurple.shade700
+                                      : Colors.deepPurple.shade300,
                               fontSize: 18,
                             ),
                           ),
@@ -580,8 +548,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           color: nowPage == 1
                               ? themeProvider.isDarkMode
-                              ? Colors.deepPurple.shade700
-                              : Colors.deepPurple.shade300
+                                  ? Colors.deepPurple.shade700
+                                  : Colors.deepPurple.shade300
                               : Colors.white,
                         ),
                         child: Center(
@@ -591,8 +559,8 @@ class _LoginPageState extends State<LoginPage> {
                               color: nowPage == 1
                                   ? Colors.grey.shade300
                                   : themeProvider.isDarkMode
-                                  ? Colors.deepPurple.shade700
-                                  : Colors.deepPurple.shade300,
+                                      ? Colors.deepPurple.shade700
+                                      : Colors.deepPurple.shade300,
                               fontSize: 18,
                             ),
                           ),

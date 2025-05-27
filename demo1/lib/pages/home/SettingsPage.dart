@@ -4,6 +4,8 @@ import 'package:demo1/providers/theme_provider.dart';
 import 'package:demo1/services/user_service.dart';
 import 'package:demo1/models/request_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:demo1/constants/api_constants.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -89,14 +91,48 @@ class _SettingsPageState extends State<SettingsPage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: ElevatedButton(
-              onPressed: () {
-                final _userService = UserService();
-                _userService.logout();
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/login',
-                  (route) => false,
+              onPressed: () async {
+                print('用户点击退出登录按钮');
+
+                // 显示加载指示器
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 );
+
+                try {
+                  // 使用完全清理方法
+                  await _clearAllCacheAndLogout();
+
+                  if (!mounted) return;
+
+                  // 关闭加载指示器
+                  Navigator.pop(context);
+
+                  // 跳转到登录页
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                } catch (e) {
+                  print('退出登录过程中出错: $e');
+
+                  if (!mounted) return;
+
+                  // 关闭加载指示器
+                  Navigator.pop(context);
+
+                  // 仍然尝试跳转到登录页
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -391,40 +427,112 @@ class _SettingsPageState extends State<SettingsPage> {
                       });
 
                       try {
+                        print('==== 密码修改操作开始 ====');
                         final prefs = await SharedPreferences.getInstance();
                         final token = prefs.getString('token');
                         final username = prefs.getString('username');
-                        print('修改密码时使用的 token: ' + (token ?? 'null'));
-                        print('修改密码时使用的 username: ' + (username ?? 'null'));
+
+                        if (username == null) {
+                          throw Exception('未找到登录用户信息，请重新登录后再修改密码');
+                        }
+
+                        print('修改密码用户: $username');
+                        print('Token可用性: ${token != null ? '有效' : '无效'}');
+
+                        // 保存新旧密码
+                        final oldPasswordValue = _oldPasswordController.text;
+                        final newPasswordValue = _newPasswordController.text;
 
                         final request = RequestModel(
                           token: token,
                           username: username,
                         );
 
+                        // 第一步：修改密码API调用
+                        print('步骤1: 调用修改密码API...');
                         final result = await _userService
                             .updatePassword(
-                          oldPassword: _oldPasswordController.text,
-                          newPassword: _newPasswordController.text,
+                          oldPassword: oldPasswordValue,
+                          newPassword: newPasswordValue,
                           request: request,
                         )
                             .timeout(
-                          const Duration(seconds: 10),
+                          const Duration(seconds: 20),
                           onTimeout: () {
-                            throw Exception('请求超时，请重试');
+                            throw Exception('请求超时，请稍后再试');
                           },
                         );
 
                         if (!mounted) return;
 
-                        Navigator.of(context).pop();
+                        print('密码修改API返回: $result');
+
+                        // 第二步：执行双重验证，确保修改成功
+                        // 添加延迟，确保服务器有时间处理密码更改
+                        print('步骤2: 等待服务器处理...');
+                        await Future.delayed(Duration(seconds: 2));
+
+                        // 第三步：先直接调用服务器登出接口，强制重置会话状态
+                        print('步骤3: 强制重置服务器会话状态...');
+
+                        try {
+                          // 获取当前Token和用户名
+                          final token = prefs.getString('token');
+
+                          // 直接调用服务器端登出API
+                          final logoutResponse = await http.post(
+                            Uri.parse(
+                                '${ApiConstants.baseUrl}${ApiConstants.logout}'),
+                            headers: {
+                              'username': username,
+                              'token': token ?? '',
+                              'Content-Type': 'application/json',
+                            },
+                          );
+
+                          print('服务器登出响应: ${logoutResponse.statusCode}');
+                          if (logoutResponse.statusCode == 200) {
+                            print('服务器会话重置成功');
+                          } else {
+                            print(
+                                '服务器会话重置可能不成功，状态码: ${logoutResponse.statusCode}');
+                          }
+
+                          // 额外尝试：重新获取验证码，进一步强制刷新服务器会话
+                          try {
+                            print('尝试获取新验证码，强制刷新服务器会话...');
+                            await _userService.captcha();
+                            print('验证码获取成功，有助于刷新会话状态');
+                          } catch (e) {
+                            print('获取验证码失败，但不影响主流程: $e');
+                          }
+                        } catch (e) {
+                          print('调用服务器登出API出错: $e');
+                          // 继续流程，不中断
+                        }
+
+                        // 第四步：清除本地状态，准备验证
+                        print('步骤4: 清除本地状态...');
+                        Navigator.of(context).pop(); // 关闭对话框
+
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('密码修改成功，请重新登录')),
+                          const SnackBar(content: Text('密码修改成功，正在退出登录...')),
                         );
 
-                        // 清除本地存储并跳转到登录页
-                        await _userService.logout();
+                        // 记录密码修改后的关键信息，以便在登录页面使用
+                        await prefs.setString(
+                            'last_modified_username', username);
+                        await prefs.setString(
+                            'last_modified_password', newPasswordValue);
+
+                        print('执行完全清理和登出操作...');
+                        // 使用更全面的清理方法
+                        await _clearAllCacheAndLogout();
+
+                        // 确保用户需要使用新密码登录
+                        print('跳转到登录页面...');
                         if (!mounted) return;
+
                         Navigator.pushNamedAndRemoveUntil(
                           context,
                           '/login',
@@ -512,5 +620,41 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ],
     );
+  }
+
+  // 彻底清除缓存并登出
+  Future<void> _clearAllCacheAndLogout() async {
+    try {
+      print('==== 开始清除所有缓存并登出 ====');
+
+      // 获取当前信息用于日志
+      final prefs = await SharedPreferences.getInstance();
+      final username = prefs.getString('username');
+      print('当前用户: $username');
+
+      // 1. 清除所有SharedPreferences数据
+      print('正在清除SharedPreferences...');
+      await prefs.clear();
+
+      // 2. 清除UserService静态缓存
+      print('正在清除UserService缓存...');
+      UserService.clearCache();
+
+      // 3. 调用登出方法，确保所有状态被清除
+      print('执行登出方法...');
+      final _userService = UserService();
+      await _userService.logout();
+
+      print('所有缓存已清除，准备退出');
+      print('==== 缓存清理完成 ====');
+    } catch (e) {
+      print('清除缓存过程中出错: $e');
+      // 出错时进行基本清理
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('token');
+        await prefs.remove('username');
+      } catch (_) {}
+    }
   }
 }

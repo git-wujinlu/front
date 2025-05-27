@@ -123,8 +123,9 @@ class _AskPageState extends State<AskPage> {
                                   MaterialPageRoute(
                                     builder: (context) => ConversationPage(
                                         fromQuestion: false,
-                                        name: snapshot.data?[index]
-                                            ['username']),
+                                        name: snapshot.data?[index]['username'],
+                                        conversationId: "对话id",
+                                    ),
                                   ),
                                 );
                               },

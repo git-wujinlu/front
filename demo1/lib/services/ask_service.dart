@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:demo1/constants/api_constants.dart';
 import 'package:demo1/models/request_model.dart';
 import 'package:demo1/services/user_service.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -29,7 +28,7 @@ class AskService {
   }
 
   Future<bool> askQuestion(String title, String content, List<int> ids) async {
-    final _userService = new UserService();
+    final _userService = UserService();
     int id = (await _userService.getUserByUsername())['data']['id'];
     var response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.question}'),
@@ -60,4 +59,80 @@ class AskService {
     print('创建问题error: ${jsonDecode(response.body)}');
     return false;
   }
+
+  Future<bool> createConversation(int user2Id, int questionId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/api/hangzd/conversation'),
+        headers: await RequestModel.getHeaders(),
+        body: json.encode({
+          "user2": user2Id,
+          "questionId": questionId,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('创建会话成功：${jsonDecode(response.body)}');
+        return true;
+      } else {
+        print('创建会话失败：${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('请求异常：$e');
+      return false;
+    }
+  }
+
+  Future<List<dynamic>> getConversationList() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/api/hangzd/conversations'),
+        headers: await RequestModel.getHeaders(),
+      );
+      final userService = UserService();
+      int id = (await userService.getUserByUsername())['data']['id'];
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('获取对话列表成功：$responseData');
+        for (var item in responseData['data']) {
+          if (item['user1'] == id) {
+            item['user1'] = -1;
+          }
+        }
+        return responseData['data']; // 如果你后端是放在 data 字段里
+      } else {
+        print('获取对话列表失败: ${response.body}');
+        return [];
+      }
+    } catch (e) {
+      print('请求对话列表异常: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> getQuestionById(int questionId) async {
+    final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.question}/$questionId');
+    final headers = await RequestModel.getHeaders();
+
+    try {
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          print('获取问题成功：$data');
+          return data['data'];
+        } else {
+          print('接口返回失败：$data');
+        }
+      } else {
+        print('HTTP错误 ${response.statusCode}: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('请求失败: $e');
+    }
+    return null;
+  }
+
+
 }
