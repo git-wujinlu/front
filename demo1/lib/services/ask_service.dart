@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:demo1/constants/api_constants.dart';
 import 'package:demo1/models/request_model.dart';
 import 'package:demo1/services/user_service.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,8 +29,7 @@ class AskService {
   }
 
   Future<bool> askQuestion(String title, String content, List<int> ids) async {
-    final _userService = UserService();
-    int id = (await _userService.getUserByUsername())['data']['id'];
+    print('开始提问');
     var response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.question}'),
         headers: await RequestModel.getHeaders(),
@@ -41,17 +41,20 @@ class AskService {
         }));
     if (jsonDecode(response.body)['success'] == true) {
       print('创建问题结果：${jsonDecode(response.body)}');
+      int questionId=jsonDecode(response.body)['data']['id'];
       var response2 = await http.put(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.askUsers}'),
         headers: await RequestModel.getHeaders(),
         body: json.encode({
-          // 'aid': id,
           'questionId': jsonDecode(response.body)['data'],
           'userIds': ids,
         }),
       );
       if (jsonDecode(response2.body)['success'] == true) {
         print('发送问题结果：${jsonDecode(response2.body)}');
+        for(int i=0;i<ids.length;++i){
+          makeConversation(ids[i], questionId);
+        }
         return true;
       }
       print('发送问题error: ${jsonDecode(response2.body)}');
@@ -60,29 +63,23 @@ class AskService {
     return false;
   }
 
-  Future<bool> createConversation(int user2Id, int questionId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConstants.baseUrl}/api/hangzd/conversation'),
-        headers: await RequestModel.getHeaders(),
-        body: json.encode({
-          "user2": user2Id,
-          "questionId": questionId,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        print('创建会话成功：${jsonDecode(response.body)}');
-        return true;
-      } else {
-        print('创建会话失败：${response.body}');
-        return false;
-      }
-    } catch (e) {
-      print('请求异常：$e');
-      return false;
+  Future<bool> makeConversation(int user2, int questionId) async {
+    var response = await http.post(
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conversation}'),
+      headers: await RequestModel.getHeaders(),
+      body: json.encode({
+        'user2': user2,
+        'questionId': questionId,
+      }),
+    );
+    if (jsonDecode(response.body)['success'] == true) {
+      print('向$user2 发送问题成功：${jsonDecode(response.body)}');
+      return true;
     }
+    print('向$user2 发送问题error： ${jsonDecode(response.body)}');
+    return false;
   }
+}
 
   Future<List<dynamic>> getConversationList() async {
     try {

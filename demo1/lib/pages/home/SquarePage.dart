@@ -17,6 +17,7 @@ class SquarePage extends StatefulWidget {
 class _SquarePageState extends State<SquarePage> {
   Future<List<dynamic>>? _questionsList;
   List<int> ids = [];
+  List<Map<String, dynamic>> _messages = [{'isMe': true,'text':'tmpText1'},{'isMe':false,'text':'tmpText2'}];
 
   Future<List<dynamic>> getQuestions() async {
     return [
@@ -142,24 +143,63 @@ class _SquarePageState extends State<SquarePage> {
                                       title: Text(
                                           '标题：${snapshot.data?[index]['title']}'),
                                       content: SingleChildScrollView(
-                                          child: ListView.builder(
-                                        itemBuilder: (context, index) {
-                                          return Text(index.toString());
-                                        },
-                                        itemCount: 2,
+                                          child: SizedBox(
+                                        width: 0.9 * width,
+                                        height: 0.5 * height,
+                                        // child:FutureBuilder(
+                                        //     future: getQuestion(ids[index]),
+                                        //     builder: (context, snapshot) {
+                                        //       if (snapshot.connectionState ==
+                                        //           ConnectionState.waiting) {
+                                        //         return CircularProgressIndicator();
+                                        //       } else if (snapshot.hasData) {
+                                        //         return Text("详情");
+                                        //       } else {
+                                        //         return Text("错误");
+                                        //       }
+                                        //     }),
+                                        child: ListView.builder(
+                                          padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
+                                          itemCount: _messages.length,
+                                          itemBuilder: (context, index) {
+                                            final msg = _messages[_messages.length - 1 - index];
+                                            final isMe = msg['isMe'];
+                                            // final avatar = isMe
+                                            //     ? _buildAvatar(_myAvatarUrl)
+                                            //     : _buildAvatar(_otherAvatarUrl);
+
+                                            final bubble = Container(
+                                              constraints: BoxConstraints(maxWidth: 0.7 * width),
+                                              margin: const EdgeInsets.symmetric(vertical: 4),
+                                              padding: const EdgeInsets.all(10),
+                                              decoration: BoxDecoration(
+                                                color: isMe ? Colors.purple.shade700 : Colors.white,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                msg['text'],
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: isMe ? Colors.white : Colors.black,
+                                                ),
+                                              ),
+                                            );
+
+                                            return Align(
+                                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  // if (!isMe) ...[avatar, const SizedBox(width: 8)],
+                                                  bubble,
+                                                  // if (isMe) ...[const SizedBox(width: 8), avatar],
+                                                ],
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       )
-                                          // child: FutureBuilder(
-                                          //     future: getQuestion(ids[index]),
-                                          //     builder: (context, snapshot) {
-                                          //       if (snapshot.connectionState ==
-                                          //           ConnectionState.waiting) {
-                                          //         return CircularProgressIndicator();
-                                          //       } else if (snapshot.hasData) {
-                                          //         return Text("详情");
-                                          //       } else {
-                                          //         return Text("错误");
-                                          //       }
-                                          //     }),
                                           ),
                                       actions: [
                                         TextButton(
