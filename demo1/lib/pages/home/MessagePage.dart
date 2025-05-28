@@ -162,7 +162,7 @@ class MyQuestionsTab extends StatelessWidget {
             Navigator.push(
               context,
                 MaterialPageRoute(
-                builder: (context) =>  ConversationPage(fromQuestion: true,name: question['user2'].toString(),conversationId: question['id'].toString(),),
+                builder: (context) =>  ConversationPage(fromQuestion: true,user2Id: question['user2'],conversationId: question['id'],),
               ),
             );
           },
@@ -259,7 +259,7 @@ class MyAnswersTab extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ConversationPage(fromQuestion: false,name: answer['user1'].toString(),conversationId: answer['id'].toString(),),
+                builder: (context) => ConversationPage(fromQuestion: false,user2Id: answer['user1'],conversationId: answer['id'],),
               ),
             );
           },

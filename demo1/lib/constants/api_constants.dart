@@ -28,7 +28,7 @@ class ApiConstants {
   static const String notification = '$settings/notification';
   static const String security = '$settings/security';
   static const String email = '$settings/email';
-
+  static const String getUserById = '/api/hangzd/user/id';
   // 认证相关
   static const String auth = '/api/hangzd/auth';
   static const String refreshToken = '$auth/refresh';

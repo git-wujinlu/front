@@ -7,13 +7,13 @@ import 'package:demo1/services/user_service.dart';
 
 class ConversationPage extends StatefulWidget {
   final bool fromQuestion;
-  final String name;
-  final String conversationId;
+  final int user2Id;
+  final int conversationId;
 
   const ConversationPage({
     super.key,
     required this.fromQuestion,
-    required this.name,
+    required this.user2Id,
     required this.conversationId,
   });
 
@@ -27,7 +27,8 @@ class _ConversationPageState extends State<ConversationPage> {
   List<Map<String, dynamic>> _messages = [];
   String? _myAvatarUrl;
   String? _otherAvatarUrl;
-  String _myUsername = '';
+  String myUsername = '';
+  String otherUsername = '';
 
   @override
   void initState() {
@@ -37,11 +38,13 @@ class _ConversationPageState extends State<ConversationPage> {
 
   Future<void> _loadMessagesAndAvatars() async {
     final prefs = await SharedPreferences.getInstance();
-    _myUsername = prefs.getString('username') ?? '';
+    myUsername = prefs.getString('username') ?? '';
 
     try {
-      final messagesResponse1 = await UserService().getMessagesBetweenUsers(_myUsername,widget.name,widget.conversationId);
-      final messagesResponse2 = await UserService().getMessagesBetweenUsers(widget.name,_myUsername,widget.conversationId);
+      final user = await UserService().getUserById(widget.user2Id);
+      otherUsername = user?['username'];
+      final messagesResponse1 = await UserService().getMessagesBetweenUsers(myUsername,otherUsername,widget.conversationId);
+      final messagesResponse2 = await UserService().getMessagesBetweenUsers(otherUsername,myUsername,widget.conversationId);
       final data1 = messagesResponse1['data'] as List;
       final data2 = messagesResponse2['data'] as List;
 
@@ -71,10 +74,10 @@ class _ConversationPageState extends State<ConversationPage> {
         'isMe': msg['isMe'],
       }).toList();
       final me = await UserService().getUserByUsername();
-      final other = await UserService().getOtherUserByUsername(widget.name);
+      final other = await UserService().getUserById(widget.user2Id);
       setState(() {
         _myAvatarUrl = me['data']['avatar'];
-        _otherAvatarUrl = other['data']['avatar'];
+        _otherAvatarUrl = other?['avatar'];
       });
     } catch (e) {
       print('加载消息或头像失败: $e');
@@ -105,7 +108,7 @@ class _ConversationPageState extends State<ConversationPage> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     try {
-      await UserService().addMessage(widget.name, text);
+      await UserService().addMessage(widget.user2Id,widget.conversationId, text);
       setState(() {
         _messages.add({'text': text, 'isMe': true});
         _textController.clear();
@@ -147,7 +150,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   ),
                   Center(
                     child: Text(
-                      widget.name,
+                      otherUsername,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -258,7 +261,7 @@ class _ConversationPageState extends State<ConversationPage> {
                         builder: (context) =>
                             CommentPage(
                                 fromQuestion: widget.fromQuestion,
-                                targetUser: widget.name
+                                targetUser: otherUsername
                             ),
                       ),
                     );

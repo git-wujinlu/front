@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:demo1/constants/api_constants.dart';
 import 'package:demo1/models/request_model.dart';
 import 'package:demo1/services/user_service.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -79,7 +78,7 @@ class AskService {
     print('向$user2 发送问题error： ${jsonDecode(response.body)}');
     return false;
   }
-}
+
 
   Future<List<dynamic>> getConversationList() async {
     try {
@@ -130,6 +129,5 @@ class AskService {
     }
     return null;
   }
-
 
 }

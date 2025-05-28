@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 import 'package:dio/dio.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 import '../models/request_model.dart';
@@ -519,7 +518,7 @@ class UserService {
   Future<Map<String, dynamic>> getMessagesBetweenUsers(
     String username1,
     String username2,
-    String conversationId,
+    int conversationId,
   ) async {
     try {
       // 获取第一个用户的ID
@@ -680,28 +679,26 @@ class UserService {
     }
   }
 
-  Future<void> addMessage(String name, String content) async {
+  Future<void> addMessage(int toId,int conversationId, String content) async {
     try {
-      print(name);
-      // 第一步：获取目标用户ID
-      final dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
-      final response = await dio.get(
-        '/api/hangzd/user/$name',
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-      final int toId = response.data['data']['id'];
       // 第二步：获取当前用户token和username
       final prefs = await SharedPreferences.getInstance();
       final String token = prefs.getString('token') ?? '';
       final String username = prefs.getString('username') ?? '';
-
+      final response = await _dio.get(
+        ApiConstants.userInfo.replaceAll('{username}', username),
+        options: Options(headers: await RequestModel.getHeaders()),
+      );
+      final int myId = response.data['data']['id'];
       // 第三步：构造HTTP请求发送消息
       final url = Uri.parse('http://43.143.231.162:8000/api/hangzd/message');
       final request = http.Request('POST', url);
       request.body = json.encode({
+        'fromId':myId,
         'toId': toId,
         'content': content,
         'type': 'answer', // 如果有类型变更逻辑，可单独提出来
+        'conversationId': conversationId
       });
       request.headers.addAll({
         'token': token,
@@ -765,6 +762,30 @@ class UserService {
       rethrow;
     }
   }
+
+  Future<Map<String, dynamic>?> getUserById(int id) async {
+    try {
+      var response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.getUserById}/$id'),
+        headers: await RequestModel.getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          return data['data']; // 返回用户信息
+        } else {
+          print('获取用户信息失败：${data['message']}');
+        }
+      } else {
+        print('请求失败：${response.statusCode}');
+      }
+    } catch (e) {
+      print('获取用户信息异常: $e');
+    }
+    return null;
+  }
+
 
   // 验证密码修改是否生效
   Future<bool> verifyPasswordChange({
