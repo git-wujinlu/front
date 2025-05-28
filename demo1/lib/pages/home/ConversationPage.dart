@@ -10,6 +10,7 @@ class ConversationPage extends StatefulWidget {
   final int user2Id;
   final int conversationId;
 
+
   const ConversationPage({
     super.key,
     required this.fromQuestion,
@@ -29,11 +30,15 @@ class _ConversationPageState extends State<ConversationPage> {
   String? _otherAvatarUrl;
   String myUsername = '';
   String otherUsername = '';
+  final ScrollController _inputScrollController = ScrollController(); // 输入框内部滚动
+  double _keyboardHeight = 0;
+
 
   @override
   void initState() {
     super.initState();
     _loadMessagesAndAvatars();
+
   }
 
   Future<void> _loadMessagesAndAvatars() async {
@@ -66,7 +71,7 @@ class _ConversationPageState extends State<ConversationPage> {
       final combinedMessages = [...messagesFromMe, ...messagesFromOther];
 
 // 按 createTime 排序（升序）
-      combinedMessages.sort((a, b) => b['createTime'].compareTo(a['createTime']));
+      combinedMessages.sort((a, b) => a['createTime'].compareTo(b['createTime']));
 
 // 去掉 createTime 字段，只保留 text 和 isMe
       _messages = combinedMessages.map((msg) => {
@@ -83,6 +88,13 @@ class _ConversationPageState extends State<ConversationPage> {
       print('加载消息或头像失败: $e');
     }
     setState(() {});
+    await Future.delayed(const Duration(milliseconds: 50));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+
   }
 
   Widget _buildAvatar(String? url) {
@@ -123,6 +135,16 @@ class _ConversationPageState extends State<ConversationPage> {
     } catch (e) {
       print('发送消息失败: $e');
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+
   }
 
   @override
@@ -130,7 +152,19 @@ class _ConversationPageState extends State<ConversationPage> {
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
+    final newKeyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    if (newKeyboardHeight != _keyboardHeight) {
+      _keyboardHeight = newKeyboardHeight;
 
+      // 键盘弹出时滚动到底部
+      if (_keyboardHeight > 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+          }
+        });
+      }
+    }
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -166,7 +200,7 @@ class _ConversationPageState extends State<ConversationPage> {
                 padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
-                  final msg = _messages[_messages.length - 1 - index];
+                  final msg = _messages[index];
                   final isMe = msg['isMe'];
                   final avatar = isMe
                       ? _buildAvatar(_myAvatarUrl)
@@ -204,50 +238,67 @@ class _ConversationPageState extends State<ConversationPage> {
                 },
               ),
             ),
-            SizedBox(height: 0.02 * height),
-            SizedBox(
-              height: 0.18 * height,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 0.05 * width),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                  child: TextField(
-                    controller: _textController,
-                    decoration: InputDecoration(
-                      hintText: '输入消息',
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12), // 设置圆角半径
+            //SizedBox(height: 0.05 * height),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 0.05 * width),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxHeight: 0.18 * height,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.purple.shade700, // 改为紫色
+                          width: 2,             // 加粗边框
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+
+                      child: Scrollbar(
+                        thumbVisibility: false,
+                        controller: _inputScrollController,
+                        child: TextField(
+                          controller: _textController,
+                          scrollController: _inputScrollController,
+                          maxLines: null,
+                          keyboardType: TextInputType.multiline,
+                          onChanged: (text) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (_scrollController.hasClients) {
+                                _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                              }
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            hintText: '输入消息',
+                          ),
+                        ),
                       ),
                     ),
-                    maxLines: null,
                   ),
-                      )
+
+                  const SizedBox(width: 8),
+                  // 发送按钮
+                  ElevatedButton(
+                    onPressed: _sendMessage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple.shade700,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     ),
-                    const SizedBox(width: 8),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: ElevatedButton(
-                        onPressed: _sendMessage,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple.shade700,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        child: const Text(
-                          '发送',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                    child: const Text('发送', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
               ),
             ),
-            SizedBox(height: 0.02 * height),
+
+            SizedBox(height: 0.01 * height),
             SizedBox(
               height: 0.05 * height,
               width: double.infinity,
