@@ -1,5 +1,6 @@
+import 'package:demo1/services/message_service.dart';
 import 'package:flutter/material.dart';
-import 'package:demo1/services/user_service.dart'; // 引入 user_service
+// 引入 user_service
 
 class CommentPage extends StatefulWidget {
   final bool fromQuestion;
@@ -22,7 +23,7 @@ class _CommentPageState extends State<CommentPage> {
   void _submitRating() async {
     if (_lastRating != null) {
       try {
-        await UserService().like(widget.targetUser, _lastRating!);
+        await MessageService().like(widget.targetUser, _lastRating!);
         print('评价成功');
       } catch (e) {
         print('评价失败: $e');

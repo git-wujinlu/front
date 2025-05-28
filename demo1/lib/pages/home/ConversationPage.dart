@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:demo1/pages/home/CommentPage.dart';
 import 'package:demo1/services/user_service.dart';
+import '../../services/message_service.dart';
 
 // 引入 user_service
 
@@ -48,20 +49,22 @@ class _ConversationPageState extends State<ConversationPage> {
     try {
       final user = await UserService().getUserById(widget.user2Id);
       otherUsername = user?['username'];
-      final messagesResponse1 = await UserService().getMessagesBetweenUsers(myUsername,otherUsername,widget.conversationId);
-      final messagesResponse2 = await UserService().getMessagesBetweenUsers(otherUsername,myUsername,widget.conversationId);
+      final messagesResponse1 = await MessageService().getMessagesBetweenUsers(myUsername, otherUsername, widget.conversationId);
+      final messagesResponse2 = await MessageService().getMessagesBetweenUsers(otherUsername, myUsername, widget.conversationId);
       final data1 = messagesResponse1['data'] as List;
       final data2 = messagesResponse2['data'] as List;
 
 // 为 data1 添加 isMe: true
-      final messagesFromMe = data1.map((msg) => {
+      final messagesFromMe = data1.map((msg) =>
+      {
         'text': msg['content'],
         'isMe': true,
         'createTime': msg['createTime'],
       }).toList();
 
 // 为 data2 添加 isMe: false
-      final messagesFromOther = data2.map((msg) => {
+      final messagesFromOther = data2.map((msg) =>
+      {
         'text': msg['content'],
         'isMe': false,
         'createTime': msg['createTime'],
@@ -74,7 +77,8 @@ class _ConversationPageState extends State<ConversationPage> {
       combinedMessages.sort((a, b) => a['createTime'].compareTo(b['createTime']));
 
 // 去掉 createTime 字段，只保留 text 和 isMe
-      _messages = combinedMessages.map((msg) => {
+      _messages = combinedMessages.map((msg) =>
+      {
         'text': msg['text'],
         'isMe': msg['isMe'],
       }).toList();
@@ -88,13 +92,14 @@ class _ConversationPageState extends State<ConversationPage> {
       print('加载消息或头像失败: $e');
     }
     setState(() {});
-    await Future.delayed(const Duration(milliseconds: 50));
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-      }
-    });
+    _scrollToBottomWhenReady();
+  }
 
+  void _scrollToBottomWhenReady() async {
+    while (!_scrollController.hasClients || _scrollController.position.maxScrollExtent == 0) {
+      await Future.delayed(const Duration(milliseconds: 20));
+    }
+    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
   Widget _buildAvatar(String? url) {
@@ -120,7 +125,7 @@ class _ConversationPageState extends State<ConversationPage> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     try {
-      await UserService().addMessage(widget.user2Id,widget.conversationId, text);
+      await MessageService().addMessage(widget.user2Id,widget.conversationId, text);
       setState(() {
         _messages.add({'text': text, 'isMe': true});
         _textController.clear();

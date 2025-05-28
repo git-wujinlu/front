@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:demo1/constants/api_constants.dart';
 import 'package:demo1/models/request_model.dart';
-import 'package:demo1/services/user_service.dart';
+import 'package:demo1/services/message_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,59 +51,18 @@ class AskService {
       );
       if (jsonDecode(response2.body)['success'] == true) {
         print('发送问题结果：${jsonDecode(response2.body)}');
+        final MessageService messageService= MessageService();
         for(int i=0;i<ids.length;++i){
-          makeConversation(ids[i], questionId);
+          messageService.makeConversation(ids[i], questionId);
         }
         return true;
-      }
-      print('发送问题error: ${jsonDecode(response2.body)}');
-    }
-    print('创建问题error: ${jsonDecode(response.body)}');
-    return false;
-  }
-
-  Future<bool> makeConversation(int user2, int questionId) async {
-    var response = await http.post(
-      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conversation}'),
-      headers: await RequestModel.getHeaders(),
-      body: json.encode({
-        'user2': user2,
-        'questionId': questionId,
-      }),
-    );
-    if (jsonDecode(response.body)['success'] == true) {
-      print('向$user2 发送问题成功：${jsonDecode(response.body)}');
-      return true;
-    }
-    print('向$user2 发送问题error： ${jsonDecode(response.body)}');
-    return false;
-  }
-
-
-  Future<List<dynamic>> getConversationList() async {
-    try {
-      final response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}/api/hangzd/conversations'),
-        headers: await RequestModel.getHeaders(),
-      );
-      final userService = UserService();
-      int id = (await userService.getUserByUsername())['data']['id'];
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print('获取对话列表成功：$responseData');
-        for (var item in responseData['data']) {
-          if (item['user1'] == id) {
-            item['user1'] = -1;
-          }
-        }
-        return responseData['data']; // 如果你后端是放在 data 字段里
       } else {
-        print('获取对话列表失败: ${response.body}');
-        return [];
+        print('发送问题error: ${jsonDecode(response2.body)}');
+        return false;
       }
-    } catch (e) {
-      print('请求对话列表异常: $e');
-      return [];
+    } else {
+      print('创建问题error: ${jsonDecode(response.body)}');
+      return false;
     }
   }
 

@@ -1,5 +1,6 @@
 import 'package:demo1/services/user_service.dart';
 import 'package:flutter/material.dart';
+import 'package:demo1/services/message_service.dart';
 import 'package:demo1/services/ask_service.dart';
 import 'ConversationPage.dart';
 
@@ -28,7 +29,8 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
   // Get active questions
   Future<void> getConversations() async {
     try {
-      final response = await askService.getConversationList();
+      final MessageService messageService = MessageService();
+      final response = await messageService.getConversationList();
       List<dynamic> tempQuestions = [];
       List<dynamic> tempAnswers = [];
 

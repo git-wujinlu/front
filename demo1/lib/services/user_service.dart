@@ -515,42 +515,6 @@ class UserService {
     }
   }
 
-  Future<Map<String, dynamic>> getMessagesBetweenUsers(
-    String username1,
-    String username2,
-    int conversationId,
-  ) async {
-    try {
-      // 获取第一个用户的ID
-      final response1 = await _dio.get(
-        ApiConstants.userInfo.replaceAll('{username}', username1),
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-      final int senderId = response1.data['data']['id'];
-
-      // 获取第二个用户的ID
-      final response2 = await _dio.get(
-        ApiConstants.userInfo.replaceAll('{username}', username2),
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-      final int receiverId = response2.data['data']['id'];
-
-      // 获取双方之间的消息
-      print(senderId);
-      print(receiverId);
-      final responseMessages = await _dio.get(
-        'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId/conv/$conversationId',
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-
-      print('获取消息成功: ${responseMessages.data}');
-      return responseMessages.data;
-    } on DioException catch (e) {
-      print('获取消息失败: ${e.message}');
-      throw Exception(ApiErrorHandler.handleError(e));
-    }
-  }
-
   Future<bool> checkLogin() async {
     final prefs = await SharedPreferences.getInstance();
     final username = prefs.getString('username');
@@ -676,90 +640,6 @@ class UserService {
       } catch (secondError) {
         print('应急清理失败: $secondError');
       }
-    }
-  }
-
-  Future<void> addMessage(int toId,int conversationId, String content) async {
-    try {
-      // 第二步：获取当前用户token和username
-      final prefs = await SharedPreferences.getInstance();
-      final String token = prefs.getString('token') ?? '';
-      final String username = prefs.getString('username') ?? '';
-      final response = await _dio.get(
-        ApiConstants.userInfo.replaceAll('{username}', username),
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-      final int myId = response.data['data']['id'];
-      // 第三步：构造HTTP请求发送消息
-      final url = Uri.parse('http://43.143.231.162:8000/api/hangzd/message');
-      final request = http.Request('POST', url);
-      request.body = json.encode({
-        'fromId':myId,
-        'toId': toId,
-        'content': content,
-        'type': 'answer', // 如果有类型变更逻辑，可单独提出来
-        'conversationId': conversationId
-      });
-      request.headers.addAll({
-        'token': token,
-        'username': username,
-        'Content-Type': 'application/json',
-      });
-
-      final responseStream = await request.send();
-
-      if (responseStream.statusCode == 200) {
-        final responseBody = await responseStream.stream.bytesToString();
-        print('消息发送成功: $responseBody');
-      } else {
-        final error = await responseStream.stream.bytesToString();
-        print('消息发送失败: ${responseStream.statusCode} $error');
-        throw Exception('消息发送失败: ${responseStream.reasonPhrase}');
-      }
-    } catch (e) {
-      print('addMessage 错误: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> like(String targetUsername, int value) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token') ?? '';
-      final username = prefs.getString('username') ?? '';
-
-      final headers = {
-        'token': token,
-        'username': username,
-        'Content-Type': 'application/json',
-      };
-
-      final request = http.Request(
-        'POST',
-        Uri.parse('http://43.143.231.162:8000/api/hangzd/user/like'),
-      );
-
-      request.body = json.encode({
-        'username': targetUsername,
-        'increment': value, // 1 表示好评，-1 表示差评
-      });
-
-      request.headers.addAll(headers);
-      print('准备点赞：target=$targetUsername, value=$value');
-      print('请求头: $headers');
-      print('请求体: ${request.body}');
-
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        final responseBody = await response.stream.bytesToString();
-        print('评价成功: $responseBody');
-      } else {
-        print('评价失败: ${response.reasonPhrase}');
-      }
-    } catch (e) {
-      print('发送 like 请求失败: $e');
-      rethrow;
     }
   }
 
