@@ -39,7 +39,6 @@ class _ConversationPageState extends State<ConversationPage> {
   void initState() {
     super.initState();
     _loadMessagesAndAvatars();
-
   }
 
   Future<void> _loadMessagesAndAvatars() async {
@@ -174,20 +173,19 @@ class _ConversationPageState extends State<ConversationPage> {
       body: SafeArea(
         child: Column(
           children: [
-            SizedBox(
-              height: 0.05 * height,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 0,
-                    top: 0,
-                    bottom: 0,
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  Center(
+          SizedBox(
+          height: 0.05 * height,
+          width: double.infinity,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 0.01 * width),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                Expanded(
+                  child: Center(
                     child: Text(
                       otherUsername,
                       style: const TextStyle(
@@ -196,10 +194,40 @@ class _ConversationPageState extends State<ConversationPage> {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                if (widget.fromQuestion) // 直接写条件判断，不用再加children:
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CommentPage(
+                            fromQuestion: widget.fromQuestion,
+                            targetUser: otherUsername,
+                            conversationId: widget.conversationId,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        '结束对话',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+              ],
             ),
-            Expanded(
+          ),
+        ),
+
+
+        Expanded(
               child: ListView.builder(
                 controller: _scrollController,
                 padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
@@ -254,15 +282,13 @@ class _ConversationPageState extends State<ConversationPage> {
                       constraints: BoxConstraints(
                         maxHeight: 0.18 * height,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 0),
                       decoration: BoxDecoration(
                         border: Border.all(
-                          color: Colors.purple.shade700, // 改为紫色
-                          width: 2,             // 加粗边框
+                          color: Colors.purple.shade700,
+                          width: 2,
                         ),
                         borderRadius: BorderRadius.circular(12),
                       ),
-
                       child: Scrollbar(
                         thumbVisibility: false,
                         controller: _inputScrollController,
@@ -272,6 +298,7 @@ class _ConversationPageState extends State<ConversationPage> {
                           maxLines: null,
                           keyboardType: TextInputType.multiline,
                           onChanged: (text) {
+                            setState(() {}); // 关键：触发按钮切换
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (_scrollController.hasClients) {
                                 _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -289,8 +316,20 @@ class _ConversationPageState extends State<ConversationPage> {
                   ),
 
                   const SizedBox(width: 8),
-                  // 发送按钮
-                  ElevatedButton(
+
+                  // 右侧按钮：动态切换
+                  _textController.text.isEmpty
+                      ? Ink(
+                    decoration: const ShapeDecoration(
+                      shape: CircleBorder(),
+                      color: Colors.purple,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () => MessageService().pickAndUploadImage(),
+                    ),
+                  )
+                      : ElevatedButton(
                     onPressed: _sendMessage,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple.shade700,
@@ -303,8 +342,10 @@ class _ConversationPageState extends State<ConversationPage> {
               ),
             ),
 
-            SizedBox(height: 0.01 * height),
-            SizedBox(
+
+            SizedBox(height: 0.02 * height),
+
+            /*SizedBox(
               height: 0.05 * height,
               width: double.infinity,
               child: Padding(
@@ -317,7 +358,8 @@ class _ConversationPageState extends State<ConversationPage> {
                         builder: (context) =>
                             CommentPage(
                                 fromQuestion: widget.fromQuestion,
-                                targetUser: otherUsername
+                                targetUser: otherUsername,
+                                conversationId: widget.conversationId,
                             ),
                       ),
                     );
@@ -335,8 +377,7 @@ class _ConversationPageState extends State<ConversationPage> {
                   ),
                 ),
               ),
-            ),
-            SizedBox(height: 0.02 * height),
+            ),*/
           ],
         ),
       ),
