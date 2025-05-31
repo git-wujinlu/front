@@ -107,27 +107,78 @@ class _ConversationPageState extends State<ConversationPage> {
     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
 
-  void _sendMessage() async {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
+  void _sendMessage(bool type) async {
+    final text;
     try {
-      await MessageService()
-          .addMessage(widget.user2Id, widget.conversationId, text);
+      if (type) {
+        text = _textController.text.trim();
+        if (text.isEmpty) return;
+        await MessageService()
+            .addMessage(widget.user2Id, widget.conversationId, text);
+      } else {
+        text = await MessageService()
+            .pickAndUploadImage(widget.user2Id, widget.conversationId);
+      }
+
       setState(() {
         _messages.add({'text': text, 'isMe': true});
         _textController.clear();
       });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
+
+      if (type) {
+        // 文本消息，直接滚动到底部
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_scrollController.hasClients) {
+            _scrollController.animateTo(
+              _scrollController.position.maxScrollExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
+      } else {
+        // 图片消息：轮询滚动高度是否稳定
+        double lastExtent = _scrollController.position.maxScrollExtent;
+        int stableCount = 0;
+        const int requiredStableCount = 20; // 连续稳定 5 次认为加载完成
+        const int maxTries = 30; // 最多尝试 30 次（3 秒）
+        int tries = 0;
+
+        void poll() async {
+          await Future.delayed(const Duration(milliseconds: 100));
+          if (!_scrollController.hasClients) return;
+
+          double currentExtent = _scrollController.position.maxScrollExtent;
+          if ((currentExtent - lastExtent).abs() < 1.0) {
+            stableCount++;
+          } else {
+            stableCount = 0;
+          }
+
+          lastExtent = currentExtent;
+          tries++;
+
+          if (stableCount >= requiredStableCount || tries >= maxTries) {
+            // 加载完成或超时
+            _scrollController.animateTo(
+              currentExtent,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+            return;
+          }
+
+          poll(); // 继续下一次检测
+        }
+
+        poll();
+      }
     } catch (e) {
       print('发送消息失败: $e');
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -340,12 +391,11 @@ class _ConversationPageState extends State<ConversationPage> {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () =>
-                          MessageService().pickAndUploadImage(widget.user2Id,widget.conversationId),
+                      onPressed: () => _sendMessage(false),
                     ),
                   )
                       : ElevatedButton(
-                    onPressed: _sendMessage,
+                    onPressed: () => _sendMessage(true),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.purple.shade700,
                       shape: RoundedRectangleBorder(

@@ -161,16 +161,17 @@ class MessageService {
     }
   }
 
-  Future<void> pickAndUploadImage(int toId,int conversationId) async {
+  Future<String?> pickAndUploadImage(int toId, int conversationId) async {
     try {
       // 选择图片
       final ImagePicker picker = ImagePicker();
       final XFile? pickedFile = await picker.pickImage(
-          source: ImageSource.gallery);
+        source: ImageSource.gallery,
+      );
 
       if (pickedFile == null) {
         print('用户取消选择图片');
-        return;
+        return null;
       }
 
       final File file = File(pickedFile.path);
@@ -205,20 +206,27 @@ class MessageService {
 
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
-        final Map<String, dynamic> decoded = json.decode(responseBody);  // 先解码
-        final String filePath = decoded['data'];                         // 访问字段
+        final Map<String, dynamic> decoded = json.decode(responseBody);
+        final String filePath = decoded['data'];
         print('上传成功: $decoded');
-        String fullUrl = '${ApiConstants.ossBaseUrl}$filePath';
+
+        final String fullUrl = '${ApiConstants.ossBaseUrl}$filePath';
+
+        // 发送消息
         addMessage(toId, conversationId, fullUrl);
+
+        return fullUrl;
       } else {
         print('上传失败: ${response.statusCode} - ${response.reasonPhrase}');
+        return null;
       }
 
     } catch (e) {
       print('上传图片失败: $e');
-      rethrow;
+      return null;
     }
   }
+
 
 
   Future<void> endConversation(int conversationId) async {
