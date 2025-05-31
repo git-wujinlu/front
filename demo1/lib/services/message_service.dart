@@ -59,16 +59,19 @@ class MessageService {
   }
 
   Future<Map<String, dynamic>> getMessagesBetweenUsers(
-      String username1,
-      String username2,
-      int conversationId,
-      ) async {
+    String username1,
+    String username2,
+    int conversationId,
+  ) async {
     try {
       // 获取第一个用户的 ID
-      final senderId = (await userService.getOtherUserByUsername(username1))['data']['id'];
-      final receiverId = (await userService.getOtherUserByUsername(username2))['data']['id'];
+      final senderId =
+          (await userService.getOtherUserByUsername(username1))['data']['id'];
+      final receiverId =
+          (await userService.getOtherUserByUsername(username2))['data']['id'];
       // 获取双方之间的消息
-      final url = 'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId/conv/$conversationId';
+      final url =
+          'http://43.143.231.162:8000/api/hangzd/messages/sender/$senderId/receiver/$receiverId/conv/$conversationId';
       final responseMessages = await http.get(
         Uri.parse(url),
         headers: await RequestModel.getHeaders(),
@@ -88,7 +91,7 @@ class MessageService {
     }
   }
 
-  Future<void> addMessage(int toId,int conversationId, String content) async {
+  Future<void> addMessage(int toId, int conversationId, String content) async {
     try {
       // 第二步：获取当前用户token和username
       final prefs = await SharedPreferences.getInstance();
@@ -99,7 +102,7 @@ class MessageService {
       final url = Uri.parse('http://43.143.231.162:8000/api/hangzd/message');
       final request = http.Request('POST', url);
       request.body = json.encode({
-        'fromId':myId,
+        'fromId': myId,
         'toId': toId,
         'content': content,
         'type': 'answer', // 如果有类型变更逻辑，可单独提出来
@@ -172,8 +175,8 @@ class MessageService {
     try {
       // 选择图片
       final ImagePicker picker = ImagePicker();
-      final XFile? pickedFile = await picker.pickImage(
-          source: ImageSource.gallery);
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile == null) {
         print('用户取消选择图片');
@@ -236,7 +239,8 @@ class MessageService {
         'username': username,
       };
 
-      var url = 'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/end';
+      var url =
+          'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/end';
       var request = http.Request('PUT', Uri.parse(url));
 
       request.headers.addAll(headers);
@@ -265,7 +269,8 @@ class MessageService {
         'username': username,
       };
 
-      var url = 'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/public';
+      var url =
+          'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/public';
       var request = http.MultipartRequest('PUT', Uri.parse(url));
 
       request.fields.addAll({
@@ -287,4 +292,18 @@ class MessageService {
     }
   }
 
+  Future<List<dynamic>> getPublicConversations() async{
+    print('开始获取公开对话');
+    var response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.public}'),
+        headers: await RequestModel.getHeaders(),
+        );
+    if (jsonDecode(response.body)['success'] == true) {
+      print('公开对话结果：${jsonDecode(response.body)}');
+      return [];
+    } else {
+      print('公开对话error: ${jsonDecode(response.body)}');
+      return [];
+    }
+  }
 }

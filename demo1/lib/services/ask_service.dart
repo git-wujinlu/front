@@ -41,26 +41,12 @@ class AskService {
         }));
     if (jsonDecode(response.body)['success'] == true) {
       print('创建问题结果：${jsonDecode(response.body)}');
-      int questionId=jsonDecode(response.body)['data']['id'];
-      var response2 = await http.put(
-        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.askUsers}'),
-        headers: await RequestModel.getHeaders(),
-        body: json.encode({
-          'questionId': jsonDecode(response.body)['data'],
-          'userIds': ids,
-        }),
-      );
-      if (jsonDecode(response2.body)['success'] == true) {
-        print('发送问题结果：${jsonDecode(response2.body)}');
-        final MessageService messageService= MessageService();
-        for(int i=0;i<ids.length;++i){
-          messageService.makeConversation(ids[i], questionId);
-        }
-        return true;
-      } else {
-        print('发送问题error: ${jsonDecode(response2.body)}');
-        return false;
+      int questionId = jsonDecode(response.body)['data']['id'];
+      final MessageService messageService = MessageService();
+      for (int i = 0; i < ids.length; ++i) {
+        messageService.makeConversation(ids[i], questionId);
       }
+      return true;
     } else {
       print('创建问题error: ${jsonDecode(response.body)}');
       return false;
@@ -68,7 +54,8 @@ class AskService {
   }
 
   Future<Map<String, dynamic>?> getQuestionById(int questionId) async {
-    final uri = Uri.parse('${ApiConstants.baseUrl}${ApiConstants.question}/$questionId');
+    final uri = Uri.parse(
+        '${ApiConstants.baseUrl}${ApiConstants.question}/$questionId');
     final headers = await RequestModel.getHeaders();
 
     try {
@@ -89,5 +76,4 @@ class AskService {
     }
     return null;
   }
-
 }

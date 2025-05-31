@@ -23,10 +23,13 @@ class ApiConstants {
 
   // 问答相关接口
   static const String question = '/api/hangzd/question';
-  static const String askUsers = '$user/ask';
   static const String answers = '/api/hangzd/answers';
   static const String conversation = '/api/hangzd/conversation';
   static const String recommend = '$question/recommend';
+
+  // 对话相关接口
+  static const String conversations = '/api/hangzd/conversations';
+  static const String public = '$conversations/public';
 
   // 设置相关接口
   static const String settings = '/api/hangzd/settings';

@@ -17,7 +17,7 @@ class UserService {
   static Map<String, dynamic>? _latestUserInfo;
 
   // 添加静态方法用于获取完整的图片URL
-  static String getFullAvatarUrl(String? path, {bool optimize = true}) {
+  static String   getFullAvatarUrl(String? path, {bool optimize = true}) {
     if (path == null || path.isEmpty) return '';
 
     // 如果已经是完整URL，则直接返回

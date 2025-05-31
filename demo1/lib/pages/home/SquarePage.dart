@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../services/message_service.dart';
+import '../../services/user_service.dart';
 import 'ConversationPage.dart';
 
 class SquarePage extends StatefulWidget {
@@ -15,11 +18,12 @@ class SquarePage extends StatefulWidget {
 }
 
 class _SquarePageState extends State<SquarePage> {
+  final messageService = MessageService();
   Future<List<dynamic>>? _questionsList;
   List<int> ids = [];
-  List<Map<String, dynamic>> _messages = [{'isMe': true,'text':'tmpText1'},{'isMe':false,'text':'tmpText2'}];
 
   Future<List<dynamic>> getQuestions() async {
+    messageService.getPublicConversations();
     return [
       {
         'id': 1,
@@ -37,8 +41,10 @@ class _SquarePageState extends State<SquarePage> {
     _questionsList?.then((data) {
       print("已公开${data.length}个问题");
       for (int i = 0; i < data.length; ++i) {
-        ids[i] = data[i]['id'];
+        print("已设置第一个问题的id为${data[i]['id']}");
+        ids.add(data[i]['id']);
       }
+      print(ids);
     });
     super.initState();
   }
@@ -73,7 +79,50 @@ class _SquarePageState extends State<SquarePage> {
   }
 
   Future<dynamic> getQuestion(int id) async {
-    return 1;
+    final prefs = await SharedPreferences.getInstance();
+    String myUsername = prefs.getString('username') ?? '';
+    List<dynamic> _messages = [];
+
+    try {
+      // final user = await UserService().getUserById(widget.user2Id);
+      // String otherUsername = user?['username'];
+      // final messagesResponse1 = await MessageService().getMessagesBetweenUsers(
+      //     myUsername, otherUsername, widget.conversationId);
+      // final messagesResponse2 = await MessageService().getMessagesBetweenUsers(
+      //     otherUsername, myUsername, widget.conversationId);
+      // final data1 = messagesResponse1['data'] as List;
+      // final data2 = messagesResponse2['data'] as List;
+      // final messagesFromMe = data1
+      //     .map((msg) => {
+      //           'text': msg['content'],
+      //           'isMe': true,
+      //           'createTime': msg['createTime'],
+      //         })
+      //     .toList();
+      //
+      // final messagesFromOther = data2
+      //     .map((msg) => {
+      //           'text': msg['content'],
+      //           'isMe': false,
+      //           'createTime': msg['createTime'],
+      //         })
+      //     .toList();
+      //
+      // final combinedMessages = [...messagesFromMe, ...messagesFromOther];
+      //
+      // combinedMessages
+      //     .sort((a, b) => a['createTime'].compareTo(b['createTime']));
+      //
+      // _messages = combinedMessages
+      //     .map((msg) => {
+      //           'text': msg['text'],
+      //           'isMe': msg['isMe'],
+      //         })
+      //     .toList();
+    } catch (e) {
+      print('加载消息或头像失败: $e');
+    }
+    return _messages;
   }
 
   @override
@@ -146,61 +195,122 @@ class _SquarePageState extends State<SquarePage> {
                                           child: SizedBox(
                                         width: 0.9 * width,
                                         height: 0.5 * height,
-                                        // child:FutureBuilder(
-                                        //     future: getQuestion(ids[index]),
-                                        //     builder: (context, snapshot) {
-                                        //       if (snapshot.connectionState ==
-                                        //           ConnectionState.waiting) {
-                                        //         return CircularProgressIndicator();
-                                        //       } else if (snapshot.hasData) {
-                                        //         return Text("详情");
-                                        //       } else {
-                                        //         return Text("错误");
-                                        //       }
-                                        //     }),
-                                        child: ListView.builder(
-                                          padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
-                                          itemCount: _messages.length,
-                                          itemBuilder: (context, index) {
-                                            final msg = _messages[_messages.length - 1 - index];
-                                            final isMe = msg['isMe'];
-                                            // final avatar = isMe
-                                            //     ? _buildAvatar(_myAvatarUrl)
-                                            //     : _buildAvatar(_otherAvatarUrl);
+                                        child: FutureBuilder(
+                                            future: getQuestion(ids[index]),
+                                            builder: (context, snapshot) {
+                                              if (snapshot.connectionState ==
+                                                  ConnectionState.waiting) {
+                                                return CircularProgressIndicator();
+                                              } else if (snapshot.hasData) {
+                                                return ListView.builder(
+                                                  padding: EdgeInsets.symmetric(
+                                                      horizontal: 0.05 * width,
+                                                      vertical: 8),
+                                                  itemCount:
+                                                      snapshot.data?.length,
+                                                  itemBuilder:
+                                                      (context, index) {
+                                                    final msg = snapshot.data?[
+                                                        snapshot.data?.length -
+                                                            1 -
+                                                            index];
+                                                    final isMe = msg['isMe'];
 
-                                            final bubble = Container(
-                                              constraints: BoxConstraints(maxWidth: 0.7 * width),
-                                              margin: const EdgeInsets.symmetric(vertical: 4),
-                                              padding: const EdgeInsets.all(10),
-                                              decoration: BoxDecoration(
-                                                color: isMe ? Colors.purple.shade700 : Colors.white,
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                msg['text'],
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  color: isMe ? Colors.white : Colors.black,
-                                                ),
-                                              ),
-                                            );
+                                                    final bubble = Container(
+                                                      constraints:
+                                                          BoxConstraints(
+                                                              maxWidth:
+                                                                  0.7 * width),
+                                                      margin: const EdgeInsets
+                                                          .symmetric(
+                                                          vertical: 4),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              10),
+                                                      decoration: BoxDecoration(
+                                                        color: isMe
+                                                            ? Colors
+                                                                .purple.shade700
+                                                            : Colors.white,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(8),
+                                                      ),
+                                                      child: Text(
+                                                        msg['text'],
+                                                        style: TextStyle(
+                                                          fontSize: 16,
+                                                          color: isMe
+                                                              ? Colors.white
+                                                              : Colors.black,
+                                                        ),
+                                                      ),
+                                                    );
 
-                                            return Align(
-                                              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  // if (!isMe) ...[avatar, const SizedBox(width: 8)],
-                                                  bubble,
-                                                  // if (isMe) ...[const SizedBox(width: 8), avatar],
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      )
-                                          ),
+                                                    return Align(
+                                                      alignment: isMe
+                                                          ? Alignment
+                                                              .centerRight
+                                                          : Alignment
+                                                              .centerLeft,
+                                                      child: Row(
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        children: [
+                                                          // if (!isMe) ...[avatar, const SizedBox(width: 8)],
+                                                          bubble,
+                                                          // if (isMe) ...[const SizedBox(width: 8), avatar],
+                                                        ],
+                                                      ),
+                                                    );
+                                                  },
+                                                );
+                                              } else {
+                                                return Text("错误");
+                                              }
+                                            }),
+                                        // child: ListView.builder(
+                                        //   padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
+                                        //   itemCount: _messages.length,
+                                        //   itemBuilder: (context, index) {
+                                        //     final msg = _messages[_messages.length - 1 - index];
+                                        //     final isMe = msg['isMe'];
+                                        //
+                                        //     final bubble = Container(
+                                        //       constraints: BoxConstraints(maxWidth: 0.7 * width),
+                                        //       margin: const EdgeInsets.symmetric(vertical: 4),
+                                        //       padding: const EdgeInsets.all(10),
+                                        //       decoration: BoxDecoration(
+                                        //         color: isMe ? Colors.purple.shade700 : Colors.white,
+                                        //         borderRadius: BorderRadius.circular(8),
+                                        //       ),
+                                        //       child: Text(
+                                        //         msg['text'],
+                                        //         style: TextStyle(
+                                        //           fontSize: 16,
+                                        //           color: isMe ? Colors.white : Colors.black,
+                                        //         ),
+                                        //       ),
+                                        //     );
+                                        //
+                                        //     return Align(
+                                        //       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                                        //       child: Row(
+                                        //         mainAxisSize: MainAxisSize.min,
+                                        //         crossAxisAlignment: CrossAxisAlignment.start,
+                                        //         children: [
+                                        //           // if (!isMe) ...[avatar, const SizedBox(width: 8)],
+                                        //           bubble,
+                                        //           // if (isMe) ...[const SizedBox(width: 8), avatar],
+                                        //         ],
+                                        //       ),
+                                        //     );
+                                        //   },
+                                        // ),
+                                      )),
                                       actions: [
                                         TextButton(
                                           child: Text(
