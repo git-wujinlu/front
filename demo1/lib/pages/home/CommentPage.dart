@@ -23,18 +23,20 @@ class _CommentPageState extends State<CommentPage> {
   int? _lastRating; // 记录最后一次点击，1表示好评，-1表示差评
 
   void endConversation() async {
-    if (_lastRating != null) {
-      try {
-        await MessageService().like(widget.targetUser, _lastRating!);
-        print('评价成功');
-      } catch (e) {
-        print('评价失败: $e');
+    if (_lastRating != null ) {
+      if (_lastRating == 1) {
+        try {
+          await MessageService().like(widget.conversationId);
+        } catch (e) {
+          print('评价失败: $e');
+        }
       }
     } else {
       print('未进行评价');
     }
     await MessageService().endConversation(widget.conversationId);
     MessageService().setConversationPublic(widget.conversationId, _isPublic);
+    if (!mounted) return;
     Navigator.pop(context);
     Navigator.pop(context);
   }
@@ -126,7 +128,6 @@ class _CommentPageState extends State<CommentPage> {
                   GestureDetector(
                     onTap: () {
                       setState(() => _lastRating = 1);
-                      print('好评');
                     },
                     child: Container(
                       width: 60,
@@ -141,7 +142,6 @@ class _CommentPageState extends State<CommentPage> {
                   GestureDetector(
                     onTap: () {
                       setState(() => _lastRating = -1);
-                      print('差评');
                     },
                     child: Container(
                       width: 60,

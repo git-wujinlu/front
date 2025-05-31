@@ -130,35 +130,25 @@ class MessageService {
     }
   }
 
-  Future<void> like(String targetUsername, int value) async {
+  Future<void> like(int conversationId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
       final username = prefs.getString('username') ?? '';
-
       final headers = {
         'token': token,
         'username': username,
         'Content-Type': 'application/json',
       };
-
       final request = http.Request(
-        'POST',
+        'PUT',
         Uri.parse('http://43.143.231.162:8000/api/hangzd/user/like'),
       );
-
       request.body = json.encode({
-        'username': targetUsername,
-        'increment': value, // 1 表示好评，-1 表示差评
+        'cid' : conversationId
       });
-
       request.headers.addAll(headers);
-      print('准备点赞：target=$targetUsername, value=$value');
-      print('请求头: $headers');
-      print('请求体: ${request.body}');
-
       final response = await request.send();
-
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print('评价成功: $responseBody');
@@ -171,12 +161,12 @@ class MessageService {
     }
   }
 
-  Future<void> pickAndUploadImage() async {
+  Future<void> pickAndUploadImage(int toId,int conversationId) async {
     try {
       // 选择图片
       final ImagePicker picker = ImagePicker();
-      final XFile? pickedFile =
-          await picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await picker.pickImage(
+          source: ImageSource.gallery);
 
       if (pickedFile == null) {
         print('用户取消选择图片');
@@ -211,22 +201,25 @@ class MessageService {
         filename: fileName,
       ));
 
-      print('准备上传图片: $fileName');
-      print('请求头: ${request.headers}');
-
       final response = await request.send();
 
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
-        print('上传成功: $responseBody');
+        final Map<String, dynamic> decoded = json.decode(responseBody);  // 先解码
+        final String filePath = decoded['data'];                         // 访问字段
+        print('上传成功: $decoded');
+        String fullUrl = '${ApiConstants.ossBaseUrl}$filePath';
+        addMessage(toId, conversationId, fullUrl);
       } else {
         print('上传失败: ${response.statusCode} - ${response.reasonPhrase}');
       }
+
     } catch (e) {
       print('上传图片失败: $e');
       rethrow;
     }
   }
+
 
   Future<void> endConversation(int conversationId) async {
     try {
