@@ -79,9 +79,8 @@ class _AskResultPageState extends State<AskResultPage> {
             child: Text(a[i]),
           ),
         );
-        ans.add(SizedBox(width: 0.015 * width));
+        if (i < a.length + 1) ans.add(SizedBox(width: 0.015 * width));
       }
-      ans.removeLast();
       return ans;
     }
 

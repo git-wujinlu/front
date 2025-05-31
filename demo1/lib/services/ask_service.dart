@@ -15,14 +15,15 @@ class AskService {
       'Content-Type': 'application/json',
     };
     var response = await http.post(
-      Uri.parse('http://43.143.231.162:4999/recommend'),
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.recommend}'),
       headers: headers,
       body: json.encode({"question": s}),
     );
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      print(jsonDecode(response.body)['data']);
+      return jsonDecode(response.body)['data'];
     } else {
-      print("error");
+      print("推荐error:$response");
     }
     return [];
   }
