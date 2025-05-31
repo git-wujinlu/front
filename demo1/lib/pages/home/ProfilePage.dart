@@ -54,7 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _phoneController.text = userData['phone'] ?? '';
         _bioController.text = userData['introduction'] ?? '';
         _tags = tagsList;
-        _avatarUrl = userData['avatar'];
+        _avatarUrl = userData['fullAvatarUrl'] ?? userData['avatar'];
         _isLoading = false;
       });
     } catch (e) {
@@ -68,17 +68,67 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _pickImage() async {
     try {
       final ImagePicker picker = ImagePicker();
+
+      // 显示选择来源对话框
+      if (!mounted) return;
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('选择图片来源'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('从相册选择'),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('拍照'),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) {
+        print('用户取消选择图片来源');
+        return;
+      }
+
+      print('用户选择图片来源: ${source == ImageSource.gallery ? "相册" : "相机"}');
+
+      // 图片选择设置
       final XFile? image = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 800, // 限制图片最大宽度
-        maxHeight: 800, // 限制图片最大高度
-        imageQuality: 85, // 压缩图片质量
+        source: source,
+        maxWidth: 500, // 降低图片最大宽度
+        maxHeight: 500, // 降低图片最大高度
+        imageQuality: 70, // 降低图片质量以减小文件大小
+        preferredCameraDevice: CameraDevice.rear,
       );
 
       if (image != null) {
+        print('成功选择图片: ${image.path}');
+        print('文件大小: ${await File(image.path).length()} 字节');
+
+        // 检查文件是否存在
+        final file = File(image.path);
+        if (!await file.exists()) {
+          throw Exception('选择的图片文件不存在');
+        }
+
+        // 检查文件是否为空
+        if (await file.length() == 0) {
+          throw Exception('选择的图片文件为空');
+        }
+
         setState(() {
-          _selectedImage = File(image.path);
+          _selectedImage = file;
         });
+
+        print('图片已设置到状态中');
       } else {
         // 用户取消选择，不做任何处理
         print('用户取消选择图片');
@@ -131,13 +181,64 @@ class _ProfilePageState extends State<ProfilePage> {
       });
       print('开始保存用户信息'); // 添加调试日志
 
+      // 处理头像上传
+      String? avatarUrl = _avatarUrl;
+      if (_selectedImage != null) {
+        print('检测到新选择的头像图片，准备上传');
+        try {
+          // 尝试使用Dio上传图片到OSS获取URL
+          avatarUrl = await _userService.uploadFile(_selectedImage!);
+          print('头像上传成功，获取URL: $avatarUrl');
+        } catch (uploadError) {
+          print('Dio头像上传失败: $uploadError，尝试使用HTTP方式上传');
+
+          // 第一种方法失败，尝试使用HTTP方式上传
+          try {
+            avatarUrl = await _userService.uploadFileWithHttp(_selectedImage!);
+            print('HTTP方式头像上传成功，获取URL: $avatarUrl');
+          } catch (httpError) {
+            print('HTTP方式头像上传也失败: $httpError');
+
+            // 如果是开发测试，可以直接跳过头像上传继续更新其他信息
+            if (mounted) {
+              final continueWithoutAvatar = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('头像上传失败'),
+                  content: Text('头像上传出错: $httpError\n\n是否继续更新其他信息？'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(false),
+                      child: const Text('取消'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(true),
+                      child: const Text('继续'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (continueWithoutAvatar != true) {
+                throw Exception('头像上传失败，用户取消操作');
+              }
+
+              // 用户选择继续，保持原头像
+              print('用户选择继续更新其他信息，保持原头像');
+            } else {
+              throw Exception('头像上传失败: $httpError');
+            }
+          }
+        }
+      }
+
       // 先更新用户基本信息
       final result = await _userService.updateUserProfile(
         oldUsername: _oldUsername ?? '',
         newUsername: _nameController.text,
         phone: _phoneController.text,
         introduction: _bioController.text,
-        avatar: _selectedImage?.path ?? _avatarUrl,
+        avatar: avatarUrl, // 使用上传后的URL或原有URL
       );
 
       print('用户基本信息更新成功: $result'); // 添加调试日志
@@ -267,9 +368,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         backgroundImage: _selectedImage != null
                             ? FileImage(_selectedImage!)
                             : (_avatarUrl != null
-                                    ? NetworkImage(_avatarUrl!)
-                                    : const AssetImage('assets/img.png'))
-                                as ImageProvider,
+                                ? NetworkImage(
+                                    UserService.getFullAvatarUrl(_avatarUrl!))
+                                : const AssetImage(
+                                    'assets/img.png')) as ImageProvider,
                         backgroundColor: Theme.of(
                           context,
                         ).primaryColor.withOpacity(0.2),

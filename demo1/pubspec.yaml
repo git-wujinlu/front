@@ -41,6 +41,9 @@ dependencies:
   dio: ^5.4.0
   json_annotation: ^4.8.1
   image_picker: ^1.0.7
+  path: ^1.8.0           # 提供 basename()
+  mime: ^1.0.4           # 提供 lookupMimeType()
+  http_parser: ^4.0.2    # 提供 MediaType 类
 
 dev_dependencies:
   flutter_test:

@@ -23,6 +23,7 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     // Load active questions when the page is first initialized
+    //askService.askQuestion("debug", "check open status", [1]);
     getConversations();
   }
 

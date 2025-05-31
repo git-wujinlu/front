@@ -141,10 +141,9 @@ class _SelfPageState extends State<SelfPage> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: NetworkImage(
-                        _userInfo?['avatar'] ??
-                            'https://img.icons8.com/ios/50/user--v1.png',
-                      ),
+                      backgroundImage: _getAvatarImage(),
+                      backgroundColor:
+                          Theme.of(context).primaryColor.withOpacity(0.1),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -344,5 +343,22 @@ class _SelfPageState extends State<SelfPage> {
         ),
       ),
     );
+  }
+
+  // 添加一个方法来安全获取头像图片
+  ImageProvider _getAvatarImage() {
+    try {
+      final avatar = _userInfo?['fullAvatarUrl'] ??
+          UserService.getFullAvatarUrl(_userInfo?['avatar']);
+
+      if (avatar != null && avatar.isNotEmpty) {
+        return NetworkImage(avatar);
+      }
+    } catch (e) {
+      print('获取头像图片出错: $e');
+    }
+
+    // 如果出错或没有头像，返回默认图片
+    return const NetworkImage('https://img.icons8.com/ios/50/user--v1.png');
   }
 }

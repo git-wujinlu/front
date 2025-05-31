@@ -1,9 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:demo1/constants/api_constants.dart';
 import 'package:demo1/models/request_model.dart';
 import 'package:demo1/services/user_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MessageService {
@@ -160,6 +165,125 @@ class MessageService {
     } catch (e) {
       print('发送 like 请求失败: $e');
       rethrow;
+    }
+  }
+
+  Future<void> pickAndUploadImage() async {
+    try {
+      // 选择图片
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile = await picker.pickImage(
+          source: ImageSource.gallery);
+
+      if (pickedFile == null) {
+        print('用户取消选择图片');
+        return;
+      }
+
+      final File file = File(pickedFile.path);
+      final String fileName = basename(file.path);
+      final String? mimeType = lookupMimeType(file.path);
+      final mime = mimeType?.split('/') ?? ['application', 'octet-stream'];
+
+      // 获取本地缓存的 token 和用户名
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final username = prefs.getString('username') ?? '';
+
+      final uri = Uri.parse('http://43.143.231.162:8000/api/hangzd/oss/upload');
+      final request = http.MultipartRequest('POST', uri);
+
+      // 添加字段头部
+      request.headers.addAll({
+        'token': token,
+        'username': username,
+        'Content-Type': 'multipart/form-data',
+      });
+
+      // 添加文件字段
+      request.files.add(await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+        contentType: MediaType(mime[0], mime[1]),
+        filename: fileName,
+      ));
+
+      print('准备上传图片: $fileName');
+      print('请求头: ${request.headers}');
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        print('上传成功: $responseBody');
+      } else {
+        print('上传失败: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('上传图片失败: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> endConversation(int conversationId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final username = prefs.getString('username') ?? '';
+
+      var headers = {
+        'token': token,
+        'username': username,
+      };
+
+      var url = 'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/end';
+      var request = http.Request('PUT', Uri.parse(url));
+
+      request.headers.addAll(headers);
+
+      http.StreamedResponse response = await request.send();
+
+      if (response.statusCode == 200) {
+        final resStr = await response.stream.bytesToString();
+        print('结束对话成功: $resStr');
+      } else {
+        print('结束对话失败: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('结束对话异常: $e');
+    }
+  }
+
+  Future<void> setConversationPublic(int conversationId, bool isPublic) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final username = prefs.getString('username') ?? '';
+
+      var headers = {
+        'token': token,
+        'username': username,
+      };
+
+      var url = 'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/public';
+      var request = http.MultipartRequest('PUT', Uri.parse(url));
+
+      request.fields.addAll({
+        'isPublic': isPublic ? 'true' : 'false',
+      });
+
+      request.headers.addAll(headers);
+
+      http.StreamedResponse response = await request.send();
+
+      if (response.statusCode == 200) {
+        final resStr = await response.stream.bytesToString();
+        print('设置公开状态成功: $resStr');
+      } else {
+        print('设置公开状态失败: ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('设置公开状态异常: $e');
     }
   }
 

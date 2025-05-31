@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 class CommentPage extends StatefulWidget {
   final bool fromQuestion;
   final String targetUser;
+  final int conversationId;
 
   const CommentPage({
     super.key,
     required this.fromQuestion,
     required this.targetUser,
+    required this.conversationId,
   });
 
   @override
@@ -20,7 +22,7 @@ class _CommentPageState extends State<CommentPage> {
   bool _isPublic = true; // 默认是公开
   int? _lastRating; // 记录最后一次点击，1表示好评，-1表示差评
 
-  void _submitRating() async {
+  void endConversation() async {
     if (_lastRating != null) {
       try {
         await MessageService().like(widget.targetUser, _lastRating!);
@@ -31,6 +33,8 @@ class _CommentPageState extends State<CommentPage> {
     } else {
       print('未进行评价');
     }
+    await MessageService().endConversation(widget.conversationId);
+    MessageService().setConversationPublic(widget.conversationId, _isPublic);
     Navigator.pop(context);
     Navigator.pop(context);
   }
@@ -84,11 +88,10 @@ class _CommentPageState extends State<CommentPage> {
             child: Container(
               color: Theme.of(context).cardTheme.color,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.close,
-                        color: Theme.of(context).textTheme.bodyLarge?.color),
+                    icon: const Icon(Icons.arrow_back),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -192,7 +195,7 @@ class _CommentPageState extends State<CommentPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  onPressed: _submitRating,
+                  onPressed: endConversation,
                   child: Text('确定',
                       style: TextStyle(
                           color: Theme.of(context).textTheme.bodyLarge?.color)),

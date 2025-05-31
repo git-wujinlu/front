@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:http/http.dart' as http;
-
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
@@ -15,6 +15,28 @@ class UserService {
 
   // 添加静态变量用于存储最新的用户信息
   static Map<String, dynamic>? _latestUserInfo;
+
+  // 添加静态方法用于获取完整的图片URL
+  static String getFullAvatarUrl(String? path, {bool optimize = true}) {
+    if (path == null || path.isEmpty) return '';
+
+    // 如果已经是完整URL，则直接返回
+    if (path.startsWith('http')) {
+      // 如果需要优化且URL不包含参数，则添加优化参数
+      if (optimize && !path.contains('?')) {
+        return '$path?x-oss-process=image/resize,m_lfit,w_800,h_800';
+      }
+      return path;
+    }
+
+    // 否则添加OSS前缀
+    final fullUrl = '${ApiConstants.ossBaseUrl}$path';
+    // 如果需要优化显示效果，添加参数
+    if (optimize) {
+      return '$fullUrl?x-oss-process=image/resize,m_lfit,w_800,h_800';
+    }
+    return fullUrl;
+  }
 
   // 使用真实后端而不是Mock服务
   UserService()
@@ -176,6 +198,16 @@ class UserService {
         throw Exception('获取用户信息失败');
       }
 
+      // 处理返回的头像URL，添加用于前端显示的完整URL
+      final userData = response.data['data'];
+      if (userData['avatar'] != null &&
+          userData['avatar'].toString().isNotEmpty) {
+        // 保存原始avatar值，同时添加用于显示的fullAvatarUrl
+        print('原始头像路径: ${userData['avatar']}');
+        userData['fullAvatarUrl'] = getFullAvatarUrl(userData['avatar']);
+        print('完整显示头像URL: ${userData['fullAvatarUrl']}');
+      }
+
       return response.data;
     } on DioException catch (e) {
       throw Exception(ApiErrorHandler.handleError(e));
@@ -207,6 +239,13 @@ class UserService {
 
       if (response.data['data'] == null) {
         throw Exception('获取用户信息失败');
+      }
+
+      // 处理返回的头像URL，添加用于前端显示的完整URL
+      final userData = response.data['data'];
+      if (userData['avatar'] != null &&
+          userData['avatar'].toString().isNotEmpty) {
+        userData['fullAvatarUrl'] = getFullAvatarUrl(userData['avatar']);
       }
 
       return response.data;
@@ -250,6 +289,136 @@ class UserService {
     }
   }
 
+  // 上传文件到OSS并返回URL
+  Future<String> uploadFile(File file) async {
+    try {
+      print('开始上传文件: ${file.path}');
+      print('文件大小: ${await file.length()} 字节');
+      print('文件类型: ${file.path.split('.').last}');
+
+      // 获取请求头
+      final headers = await RequestModel.getHeaders();
+      print('上传请求头: $headers');
+
+      // 修改文件名以防冲突
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filename = 'avatar_${timestamp}_${file.path.split('/').last}';
+      print('使用文件名: $filename');
+
+      // 创建FormData
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(
+          file.path,
+          filename: filename,
+        ),
+      });
+
+      print('FormData字段: ${formData.fields}');
+      print(
+          'FormData文件: ${formData.files.map((e) => e.key + ': ' + e.value.filename!).join(', ')}');
+
+      print('调用文件上传接口: ${ApiConstants.baseUrl}${ApiConstants.fileUpload}');
+
+      // 使用不同的超时设置
+      final response = await _dio.post(
+        ApiConstants.fileUpload,
+        data: formData,
+        options: Options(
+          headers: headers,
+          contentType: 'multipart/form-data',
+          sendTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 30),
+        ),
+      );
+
+      print('文件上传响应状态码: ${response.statusCode}');
+      print('文件上传响应数据类型: ${response.data.runtimeType}');
+      print('文件上传响应: ${response.data}');
+
+      if (response.statusCode == 200 && response.data['success'] == true) {
+        // 获取文件路径并添加OSS前缀
+        final filePath = response.data['data'];
+        if (filePath == null) {
+          throw Exception('上传成功但未返回文件路径');
+        }
+
+        final fullUrl = '${ApiConstants.ossBaseUrl}$filePath';
+        print('文件上传成功，完整URL: $fullUrl');
+        return fullUrl;
+      } else {
+        // 尝试获取详细错误信息
+        final errorMessage = response.data['message'] ?? '文件上传失败';
+        final errorCode = response.data['code'] ?? '未知错误码';
+        throw Exception('上传失败 [错误码: $errorCode]: $errorMessage');
+      }
+    } on DioException catch (e) {
+      print('文件上传DIO异常: ${e.message}');
+      print('错误类型: ${e.type}');
+      if (e.response != null) {
+        print('错误响应状态码: ${e.response?.statusCode}');
+        print('错误响应数据: ${e.response?.data}');
+      }
+      throw Exception('文件上传网络错误: ${ApiErrorHandler.handleError(e)}');
+    } catch (e) {
+      print('文件上传过程中发生未知错误: $e');
+
+      // 如果是文件不存在或无法访问的问题
+      if (e.toString().contains('FileSystemException')) {
+        throw Exception('无法访问选择的图片文件，请重新选择');
+      }
+
+      throw Exception('文件上传失败：$e');
+    }
+  }
+
+  // 备用方法：使用http包上传文件
+  Future<String> uploadFileWithHttp(File file) async {
+    try {
+      print('使用HTTP方式上传文件: ${file.path}');
+
+      // 获取请求头
+      final headers = await RequestModel.getHeaders();
+      // 移除Content-Type，让multipart自动设置
+      headers.remove('Content-Type');
+
+      // 创建multipart请求
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.fileUpload}'),
+      );
+
+      // 添加头信息
+      request.headers.addAll(headers);
+
+      // 添加文件
+      request.files.add(await http.MultipartFile.fromPath(
+        'file',
+        file.path,
+      ));
+
+      print('发送HTTP上传请求...');
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('HTTP上传响应状态码: ${response.statusCode}');
+      print('HTTP上传响应: ${response.body}');
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final filePath = responseData['data'];
+        final fullUrl = '${ApiConstants.ossBaseUrl}$filePath';
+        print('HTTP上传成功，完整URL: $fullUrl');
+        return fullUrl;
+      } else {
+        throw Exception(responseData['message'] ?? '文件上传失败');
+      }
+    } catch (e) {
+      print('HTTP上传过程中发生错误: $e');
+      throw Exception('HTTP上传失败：$e');
+    }
+  }
+
   // 更新用户资料
   Future<Map<String, dynamic>> updateUserProfile({
     required String oldUsername,
@@ -273,7 +442,14 @@ class UserService {
 
       // 如果有头像，添加到请求体中
       if (avatar != null) {
-        requestBody['avatar'] = avatar;
+        // 如果avatar是带有OSS前缀的完整URL，提取出路径部分
+        if (avatar.startsWith(ApiConstants.ossBaseUrl)) {
+          final path = avatar.substring(ApiConstants.ossBaseUrl.length);
+          print('从完整URL中提取的路径: $path');
+          requestBody['avatar'] = path;
+        } else {
+          requestBody['avatar'] = avatar;
+        }
       }
 
       print('发送请求数据: $requestBody'); // 添加请求数据日志
@@ -653,7 +829,14 @@ class UserService {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
         if (data['success'] == true) {
-          return data['data']; // 返回用户信息
+          // 处理返回的用户数据中的头像URL
+          final userData = data['data'];
+          if (userData != null &&
+              userData['avatar'] != null &&
+              userData['avatar'].toString().isNotEmpty) {
+            userData['fullAvatarUrl'] = getFullAvatarUrl(userData['avatar']);
+          }
+          return userData; // 返回用户信息
         } else {
           print('获取用户信息失败：${data['message']}');
         }
@@ -665,7 +848,6 @@ class UserService {
     }
     return null;
   }
-
 
   // 验证密码修改是否生效
   Future<bool> verifyPasswordChange({
