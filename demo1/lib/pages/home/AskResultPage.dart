@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/theme_provider.dart';
+import '../../services/user_service.dart';
 
 class AskResultPage extends StatefulWidget {
   final String searchString;
@@ -184,7 +185,7 @@ class _AskResultPageState extends State<AskResultPage> {
                               children: [
                                 ClipOval(
                                   child:
-                                      (snapshot.data?[index]['avatar'] == null)
+                                      (UserService.getFullAvatarUrl(snapshot.data?[index]['avatar']).isEmpty)
                                           ? Image.asset(
                                               'assets/img.png',
                                               width: 0.12 * width,
@@ -192,7 +193,7 @@ class _AskResultPageState extends State<AskResultPage> {
                                               fit: BoxFit.fill,
                                             )
                                           : Image.network(
-                                              snapshot.data?[index]['avatar'],
+                                        UserService.getFullAvatarUrl(snapshot.data?[index]['avatar']),
                                               width: 0.12 * width,
                                               height: 0.12 * width,
                                               fit: BoxFit.fill,
