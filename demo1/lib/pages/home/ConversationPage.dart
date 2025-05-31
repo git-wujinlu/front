@@ -11,7 +11,6 @@ class ConversationPage extends StatefulWidget {
   final int user2Id;
   final int conversationId;
 
-
   const ConversationPage({
     super.key,
     required this.fromQuestion,
@@ -34,7 +33,6 @@ class _ConversationPageState extends State<ConversationPage> {
   final ScrollController _inputScrollController = ScrollController(); // 输入框内部滚动
   double _keyboardHeight = 0;
 
-
   @override
   void initState() {
     super.initState();
@@ -48,39 +46,45 @@ class _ConversationPageState extends State<ConversationPage> {
     try {
       final user = await UserService().getUserById(widget.user2Id);
       otherUsername = user?['username'];
-      final messagesResponse1 = await MessageService().getMessagesBetweenUsers(myUsername, otherUsername, widget.conversationId);
-      final messagesResponse2 = await MessageService().getMessagesBetweenUsers(otherUsername, myUsername, widget.conversationId);
+      final messagesResponse1 = await MessageService().getMessagesBetweenUsers(
+          myUsername, otherUsername, widget.conversationId);
+      final messagesResponse2 = await MessageService().getMessagesBetweenUsers(
+          otherUsername, myUsername, widget.conversationId);
       final data1 = messagesResponse1['data'] as List;
       final data2 = messagesResponse2['data'] as List;
 
 // 为 data1 添加 isMe: true
-      final messagesFromMe = data1.map((msg) =>
-      {
-        'text': msg['content'],
-        'isMe': true,
-        'createTime': msg['createTime'],
-      }).toList();
+      final messagesFromMe = data1
+          .map((msg) => {
+                'text': msg['content'],
+                'isMe': true,
+                'createTime': msg['createTime'],
+              })
+          .toList();
 
 // 为 data2 添加 isMe: false
-      final messagesFromOther = data2.map((msg) =>
-      {
-        'text': msg['content'],
-        'isMe': false,
-        'createTime': msg['createTime'],
-      }).toList();
+      final messagesFromOther = data2
+          .map((msg) => {
+                'text': msg['content'],
+                'isMe': false,
+                'createTime': msg['createTime'],
+              })
+          .toList();
 
 // 合并两个消息列表
       final combinedMessages = [...messagesFromMe, ...messagesFromOther];
 
 // 按 createTime 排序（升序）
-      combinedMessages.sort((a, b) => a['createTime'].compareTo(b['createTime']));
+      combinedMessages
+          .sort((a, b) => a['createTime'].compareTo(b['createTime']));
 
 // 去掉 createTime 字段，只保留 text 和 isMe
-      _messages = combinedMessages.map((msg) =>
-      {
-        'text': msg['text'],
-        'isMe': msg['isMe'],
-      }).toList();
+      _messages = combinedMessages
+          .map((msg) => {
+                'text': msg['text'],
+                'isMe': msg['isMe'],
+              })
+          .toList();
       final me = await UserService().getUserByUsername();
       final other = await UserService().getUserById(widget.user2Id);
       setState(() {
@@ -95,7 +99,8 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _scrollToBottomWhenReady() async {
-    while (!_scrollController.hasClients || _scrollController.position.maxScrollExtent == 0) {
+    while (!_scrollController.hasClients ||
+        _scrollController.position.maxScrollExtent == 0) {
       await Future.delayed(const Duration(milliseconds: 20));
     }
     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
@@ -104,7 +109,8 @@ class _ConversationPageState extends State<ConversationPage> {
   Widget _buildAvatar(String? url) {
     if (url == null || url.isEmpty) {
       return ClipOval(
-        child: Image.asset('assets/img.png', width: 32, height: 32, fit: BoxFit.cover),
+        child: Image.asset('assets/img.png',
+            width: 32, height: 32, fit: BoxFit.cover),
       );
     }
     return ClipOval(
@@ -114,7 +120,8 @@ class _ConversationPageState extends State<ConversationPage> {
         height: 32,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) {
-          return Image.asset('assets/img.png', width: 32, height: 32, fit: BoxFit.cover);
+          return Image.asset('assets/img.png',
+              width: 32, height: 32, fit: BoxFit.cover);
         },
       ),
     );
@@ -124,7 +131,8 @@ class _ConversationPageState extends State<ConversationPage> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
     try {
-      await MessageService().addMessage(widget.user2Id,widget.conversationId, text);
+      await MessageService()
+          .addMessage(widget.user2Id, widget.conversationId, text);
       setState(() {
         _messages.add({'text': text, 'isMe': true});
         _textController.clear();
@@ -148,7 +156,6 @@ class _ConversationPageState extends State<ConversationPage> {
         );
       }
     });
-
   }
 
   @override
@@ -164,7 +171,8 @@ class _ConversationPageState extends State<ConversationPage> {
       if (_keyboardHeight > 0) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
-            _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+            _scrollController
+                .jumpTo(_scrollController.position.maxScrollExtent);
           }
         });
       }
@@ -173,64 +181,65 @@ class _ConversationPageState extends State<ConversationPage> {
       body: SafeArea(
         child: Column(
           children: [
-          SizedBox(
-          height: 0.05 * height,
-          width: double.infinity,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 0.01 * width),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      otherUsername,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+            SizedBox(
+              height: 0.05 * height,
+              width: double.infinity,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 0.01 * width),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                  ),
-                ),
-                if (widget.fromQuestion) // 直接写条件判断，不用再加children:
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CommentPage(
-                            fromQuestion: widget.fromQuestion,
-                            targetUser: otherUsername,
-                            conversationId: widget.conversationId,
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          otherUsername,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        '结束对话',
-                        style: TextStyle(color: Colors.white),
                       ),
                     ),
-                  ),
-              ],
+                    if (widget.fromQuestion) // 直接写条件判断，不用再加children:
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CommentPage(
+                                fromQuestion: widget.fromQuestion,
+                                targetUser: otherUsername,
+                                conversationId: widget.conversationId,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            '结束对话',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
 
-
-        Expanded(
+            Expanded(
               child: ListView.builder(
                 controller: _scrollController,
-                padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
+                padding:
+                    EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
                 itemCount: _messages.length,
                 itemBuilder: (context, index) {
                   final msg = _messages[index];
@@ -257,7 +266,8 @@ class _ConversationPageState extends State<ConversationPage> {
                   );
 
                   return Align(
-                    alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment:
+                        isMe ? Alignment.centerRight : Alignment.centerLeft,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,13 +311,15 @@ class _ConversationPageState extends State<ConversationPage> {
                             setState(() {}); // 关键：触发按钮切换
                             WidgetsBinding.instance.addPostFrameCallback((_) {
                               if (_scrollController.hasClients) {
-                                _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                                _scrollController.jumpTo(
+                                    _scrollController.position.maxScrollExtent);
                               }
                             });
                           },
                           decoration: const InputDecoration(
                             border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
                             hintText: '输入消息',
                           ),
                         ),
@@ -320,28 +332,31 @@ class _ConversationPageState extends State<ConversationPage> {
                   // 右侧按钮：动态切换
                   _textController.text.isEmpty
                       ? Ink(
-                    decoration: const ShapeDecoration(
-                      shape: CircleBorder(),
-                      color: Colors.purple,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () => MessageService().pickAndUploadImage(),
-                    ),
-                  )
+                          decoration: const ShapeDecoration(
+                            shape: CircleBorder(),
+                            color: Colors.purple,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.add, color: Colors.white),
+                            onPressed: () =>
+                                MessageService().pickAndUploadImage(),
+                          ),
+                        )
                       : ElevatedButton(
-                    onPressed: _sendMessage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple.shade700,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    ),
-                    child: const Text('发送', style: TextStyle(color: Colors.white)),
-                  ),
+                          onPressed: _sendMessage,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple.shade700,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                          ),
+                          child: const Text('发送',
+                              style: TextStyle(color: Colors.white)),
+                        ),
                 ],
               ),
             ),
-
 
             SizedBox(height: 0.02 * height),
 

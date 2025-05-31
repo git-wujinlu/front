@@ -1,7 +1,6 @@
 class ApiConstants {
   // API基础路径
-  static const String baseUrl =
-      'http://43.143.231.162:8000';
+  static const String baseUrl = 'http://43.143.231.162:8000';
 
   // 用户相关接口
   static const String user = '/api/hangzd/user';
@@ -17,9 +16,14 @@ class ApiConstants {
   static const String captcha = '$user/captcha';
   static const String checkLogin = '$user/check-login';
 
+  // 文件上传接口
+  static const String fileUpload = '/api/hangzd/oss/upload';
+  static const String ossBaseUrl =
+      'https://oss-symbol.oss-cn-beijing.aliyuncs.com/';
+
   // 问答相关接口
   static const String question = '/api/hangzd/question';
-  static const String askUsers= '$user/ask';
+  static const String askUsers = '$user/ask';
   static const String answers = '/api/hangzd/answers';
   static const String conversation = '/api/hangzd/conversation';
 
