@@ -130,35 +130,25 @@ class MessageService {
     }
   }
 
-  Future<void> like(String targetUsername, int value) async {
+  Future<void> like(int conversationId) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
       final username = prefs.getString('username') ?? '';
-
       final headers = {
         'token': token,
         'username': username,
         'Content-Type': 'application/json',
       };
-
       final request = http.Request(
-        'POST',
+        'PUT',
         Uri.parse('http://43.143.231.162:8000/api/hangzd/user/like'),
       );
-
       request.body = json.encode({
-        'username': targetUsername,
-        'increment': value, // 1 表示好评，-1 表示差评
+        'cid' : conversationId
       });
-
       request.headers.addAll(headers);
-      print('准备点赞：target=$targetUsername, value=$value');
-      print('请求头: $headers');
-      print('请求体: ${request.body}');
-
       final response = await request.send();
-
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
         print('评价成功: $responseBody');
@@ -171,16 +161,17 @@ class MessageService {
     }
   }
 
-  Future<void> pickAndUploadImage() async {
+  Future<String?> pickAndUploadImage(int toId, int conversationId) async {
     try {
       // 选择图片
       final ImagePicker picker = ImagePicker();
-      final XFile? pickedFile =
-          await picker.pickImage(source: ImageSource.gallery);
+      final XFile? pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+      );
 
       if (pickedFile == null) {
         print('用户取消选择图片');
-        return;
+        return null;
       }
 
       final File file = File(pickedFile.path);
@@ -211,22 +202,32 @@ class MessageService {
         filename: fileName,
       ));
 
-      print('准备上传图片: $fileName');
-      print('请求头: ${request.headers}');
-
       final response = await request.send();
 
       if (response.statusCode == 200) {
         final responseBody = await response.stream.bytesToString();
-        print('上传成功: $responseBody');
+        final Map<String, dynamic> decoded = json.decode(responseBody);
+        final String filePath = decoded['data'];
+        print('上传成功: $decoded');
+
+        final String fullUrl = '${ApiConstants.ossBaseUrl}$filePath';
+
+        // 发送消息
+        addMessage(toId, conversationId, fullUrl);
+
+        return fullUrl;
       } else {
         print('上传失败: ${response.statusCode} - ${response.reasonPhrase}');
+        return null;
       }
+
     } catch (e) {
       print('上传图片失败: $e');
-      rethrow;
+      return null;
     }
   }
+
+
 
   Future<void> endConversation(int conversationId) async {
     try {
@@ -306,4 +307,39 @@ class MessageService {
       return [];
     }
   }
+
+  Future<bool> getConversationStatus(int conversationId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final username = prefs.getString('username') ?? '';
+
+      final headers = {
+        'token': token,
+        'username': username,
+      };
+
+      final request = http.Request(
+        'GET',
+        Uri.parse('http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/status'),
+      );
+      request.headers.addAll(headers);
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        return json.decode(responseBody)['data'] != 0;
+      } else {
+        print('获取状态失败: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('请求 conversation status 失败: $e');
+    }
+
+    // 添加这一行确保总是返回一个 bool 值
+    return false;
+  }
+
+
 }
