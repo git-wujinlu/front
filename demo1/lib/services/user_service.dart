@@ -17,7 +17,7 @@ class UserService {
   static Map<String, dynamic>? _latestUserInfo;
 
   // 添加静态方法用于获取完整的图片URL
-  static String   getFullAvatarUrl(String? path, {bool optimize = true}) {
+  static String getFullAvatarUrl(String? path, {bool optimize = true}) {
     if (path == null || path.isEmpty) return '';
 
     // 如果已经是完整URL，则直接返回
@@ -444,10 +444,21 @@ class UserService {
       if (avatar != null) {
         // 如果avatar是带有OSS前缀的完整URL，提取出路径部分
         if (avatar.startsWith(ApiConstants.ossBaseUrl)) {
-          final path = avatar.substring(ApiConstants.ossBaseUrl.length);
+          // 移除OSS前缀
+          String path = avatar.substring(ApiConstants.ossBaseUrl.length);
+
+          // 如果路径中包含参数（如?x-oss-process=），则只保留参数前的部分
+          if (path.contains('?')) {
+            path = path.substring(0, path.indexOf('?'));
+          }
+
           print('从完整URL中提取的路径: $path');
           requestBody['avatar'] = path;
         } else {
+          // 检查avatar中是否直接包含参数
+          if (avatar.contains('?')) {
+            avatar = avatar.substring(0, avatar.indexOf('?'));
+          }
           requestBody['avatar'] = avatar;
         }
       }
@@ -659,16 +670,33 @@ class UserService {
   // 获取用户的回答列表
   Future<Map<String, dynamic>> getUserAnswers(String username) async {
     try {
-      print('开始获取用户回答列表'); // 添加调试日志
-      final response = await _dio.get(
-        '${ApiConstants.userActiveAnswers}?username=$username',
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-      print('获取用户回答列表成功: ${response.data}'); // 添加调试日志
-      return response.data;
-    } on DioException catch (e) {
-      print('获取用户回答列表失败: ${e.message}'); // 添加错误日志
-      throw Exception(ApiErrorHandler.handleError(e));
+      print('开始获取用户回答列表');
+
+      // 获取当前用户ID
+      final currentUserId = await getCurrentUserId();
+      if (currentUserId == null) {
+        throw Exception('无法获取当前用户ID');
+      }
+
+      // 获取所有会话
+      final conversationsResponse = await getConversations();
+      if (conversationsResponse['success'] != true ||
+          conversationsResponse['data'] == null) {
+        throw Exception('获取会话列表失败');
+      }
+
+      // 筛选出当前用户作为回答者的会话
+      final allConversations = conversationsResponse['data'] as List;
+      final myAnswers = allConversations
+          .where((conv) => conv['user2'] == currentUserId)
+          .toList();
+
+      print('用户回答数量: ${myAnswers.length}');
+
+      return {'code': '0', 'message': null, 'data': myAnswers, 'success': true};
+    } catch (e) {
+      print('获取用户回答列表失败: $e');
+      throw Exception('获取用户回答列表失败：$e');
     }
   }
 
@@ -678,16 +706,38 @@ class UserService {
     RequestModel? request,
   }) async {
     try {
-      print('开始获取用户问题列表'); // 添加调试日志
-      final response = await _dio.get(
-        '${ApiConstants.userActiveQuestions}?username=$username',
-        options: Options(headers: await RequestModel.getHeaders()),
-      );
-      print('获取用户问题列表成功: ${response.data}'); // 添加调试日志
-      return response.data;
-    } on DioException catch (e) {
-      print('获取用户问题列表失败: ${e.message}'); // 添加错误日志
-      throw Exception(ApiErrorHandler.handleError(e));
+      print('开始获取用户问题列表');
+
+      // 获取当前用户ID
+      final currentUserId = await getCurrentUserId();
+      if (currentUserId == null) {
+        throw Exception('无法获取当前用户ID');
+      }
+
+      // 获取所有会话
+      final conversationsResponse = await getConversations();
+      if (conversationsResponse['success'] != true ||
+          conversationsResponse['data'] == null) {
+        throw Exception('获取会话列表失败');
+      }
+
+      // 筛选出当前用户作为提问者的会话
+      final allConversations = conversationsResponse['data'] as List;
+      final myQuestions = allConversations
+          .where((conv) => conv['user1'] == currentUserId)
+          .toList();
+
+      print('用户问题数量: ${myQuestions.length}');
+
+      return {
+        'code': '0',
+        'message': null,
+        'data': myQuestions,
+        'success': true
+      };
+    } catch (e) {
+      print('获取用户问题列表失败: $e');
+      throw Exception('获取用户问题列表失败：$e');
     }
   }
 
@@ -870,6 +920,71 @@ class UserService {
     } catch (e) {
       print('验证密码修改时出错: $e');
       return false;
+    }
+  }
+
+  // 获取用户ID
+  Future<int?> getCurrentUserId() async {
+    try {
+      final userInfo = await getUserByUsername();
+      if (userInfo['success'] == true && userInfo['data'] != null) {
+        return userInfo['data']['id'] as int?;
+      }
+      return null;
+    } catch (e) {
+      print('获取用户ID失败: $e');
+      return null;
+    }
+  }
+
+  // 获取会话列表
+  Future<Map<String, dynamic>> getConversations() async {
+    try {
+      final headers = await RequestModel.getHeaders();
+      print('调用会话列表接口: ${ApiConstants.baseUrl}${ApiConstants.conversations}');
+      print('请求 headers: $headers');
+
+      final response = await _dio.get(
+        ApiConstants.conversations,
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('获取会话列表响应: ${response.data}');
+      return response.data;
+    } on DioException catch (e) {
+      print('获取会话列表失败: ${e.message}');
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      print('获取会话列表异常: $e');
+      throw Exception('获取会话列表失败：$e');
+    }
+  }
+
+  // 获取问题详情
+  Future<Map<String, dynamic>> getQuestionById(int questionId) async {
+    try {
+      print('开始获取问题详情，ID: $questionId');
+      final headers = await RequestModel.getHeaders();
+
+      final response = await _dio.get(
+        '${ApiConstants.question}/$questionId',
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('获取问题详情响应: ${response.data}');
+      return response.data;
+    } on DioException catch (e) {
+      print('获取问题详情失败: ${e.message}');
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      print('获取问题详情异常: $e');
+      throw Exception('获取问题详情失败：$e');
     }
   }
 }

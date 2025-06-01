@@ -47,6 +47,12 @@ class _ProfilePageState extends State<ProfilePage> {
           ? tagsString.split(',').map((e) => e.trim()).toList()
           : <String>[];
 
+      // 获取头像URL，确保不包含参数部分
+      String? avatarUrl = userData['fullAvatarUrl'] ?? userData['avatar'];
+      if (avatarUrl != null && avatarUrl.contains('?')) {
+        avatarUrl = avatarUrl.substring(0, avatarUrl.indexOf('?'));
+      }
+
       setState(() {
         _userInfo = userData;
         _oldUsername = userData['username'];
@@ -54,7 +60,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _phoneController.text = userData['phone'] ?? '';
         _bioController.text = userData['introduction'] ?? '';
         _tags = tagsList;
-        _avatarUrl = userData['fullAvatarUrl'] ?? userData['avatar'];
+        _avatarUrl = avatarUrl;
         _isLoading = false;
       });
     } catch (e) {
@@ -189,6 +195,11 @@ class _ProfilePageState extends State<ProfilePage> {
           // 尝试使用Dio上传图片到OSS获取URL
           avatarUrl = await _userService.uploadFile(_selectedImage!);
           print('头像上传成功，获取URL: $avatarUrl');
+
+          // 确保去掉URL参数部分
+          if (avatarUrl.contains('?')) {
+            avatarUrl = avatarUrl.substring(0, avatarUrl.indexOf('?'));
+          }
         } catch (uploadError) {
           print('Dio头像上传失败: $uploadError，尝试使用HTTP方式上传');
 
@@ -196,6 +207,11 @@ class _ProfilePageState extends State<ProfilePage> {
           try {
             avatarUrl = await _userService.uploadFileWithHttp(_selectedImage!);
             print('HTTP方式头像上传成功，获取URL: $avatarUrl');
+
+            // 确保去掉URL参数部分
+            if (avatarUrl.contains('?')) {
+              avatarUrl = avatarUrl.substring(0, avatarUrl.indexOf('?'));
+            }
           } catch (httpError) {
             print('HTTP方式头像上传也失败: $httpError');
 
@@ -267,6 +283,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 .toList()
             : <String>[];
 
+        // 获取刷新后的头像URL，确保不包含参数
+        String? refreshedAvatarUrl = refreshedData['avatar'];
+        if (refreshedAvatarUrl != null && refreshedAvatarUrl.contains('?')) {
+          refreshedAvatarUrl =
+              refreshedAvatarUrl.substring(0, refreshedAvatarUrl.indexOf('?'));
+        }
+
         if (!mounted) return;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -277,7 +300,7 @@ class _ProfilePageState extends State<ProfilePage> {
         setState(() {
           _userInfo = refreshedData;
           _oldUsername = refreshedData['username']; // 确保本地变量也更新
-          _avatarUrl = refreshedData['avatar'];
+          _avatarUrl = refreshedAvatarUrl;
           _tags = refreshedTagsList;
           _selectedImage = null;
         });
@@ -368,8 +391,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         backgroundImage: _selectedImage != null
                             ? FileImage(_selectedImage!)
                             : (_avatarUrl != null
-                                ? NetworkImage(
-                                    UserService.getFullAvatarUrl(_avatarUrl!))
+                                ? NetworkImage(_avatarUrl!.contains('http')
+                                    ? _avatarUrl!
+                                    : UserService.getFullAvatarUrl(_avatarUrl!))
                                 : const AssetImage(
                                     'assets/img.png')) as ImageProvider,
                         backgroundColor: Theme.of(

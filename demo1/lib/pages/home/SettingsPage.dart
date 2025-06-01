@@ -17,7 +17,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  bool _isNotificationEnabled = true;
   bool _isSecurityExpanded = false;
 
   @override
@@ -41,16 +40,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 value: themeProvider.isDarkMode,
                 onChanged: (value) {
                   themeProvider.toggleTheme();
-                },
-              ),
-              _buildSwitchTile(
-                icon: Icons.notifications,
-                title: '消息通知',
-                value: _isNotificationEnabled,
-                onChanged: (value) {
-                  setState(() {
-                    _isNotificationEnabled = value;
-                  });
                 },
               ),
             ],

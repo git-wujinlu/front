@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/user_service.dart';
 import '../../models/request_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../home/ConversationPage.dart';
 
 class MyQuestionsPage extends StatefulWidget {
   const MyQuestionsPage({super.key});
@@ -17,6 +18,8 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
   bool _isLoading = true;
   String? _error;
   List<dynamic> _questions = [];
+  // 保存问题详情的Map
+  final Map<int, Map<String, dynamic>> _questionDetails = {};
 
   @override
   void initState() {
@@ -50,8 +53,27 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
         return;
       }
 
+      final questions = response['data'] as List;
+
+      // 为每个问题加载详情
+      for (var question in questions) {
+        if (question['questionId'] != null) {
+          try {
+            final questionId = question['questionId'] as int;
+            final detailResponse =
+                await _userService.getQuestionById(questionId);
+            if (detailResponse['success'] == true &&
+                detailResponse['data'] != null) {
+              _questionDetails[questionId] = detailResponse['data'];
+            }
+          } catch (e) {
+            print('加载问题详情失败: $e');
+          }
+        }
+      }
+
       setState(() {
-        _questions = response['data'];
+        _questions = questions;
         _isLoading = false;
       });
     } catch (e) {
@@ -98,63 +120,132 @@ class _MyQuestionsPageState extends State<MyQuestionsPage> {
               itemCount: _questions.length,
               itemBuilder: (context, index) {
                 final question = _questions[index];
+                final questionId = question['questionId'] as int?;
+                final details =
+                    questionId != null ? _questionDetails[questionId] : null;
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          question['title'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                  child: InkWell(
+                    onTap: () {
+                      // 跳转到聊天界面
+                      if (question['user2'] != null &&
+                          question['questionId'] != null &&
+                          question['id'] != null) {
+                        _navigateToConversation(
+                          user2Id: question['user2'] as int,
+                          questionId: question['questionId'] as int,
+                          conversationId: question['id'] as int,
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('无法打开会话，缺少必要信息')),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            details != null
+                                ? details['title'] ?? '未知标题'
+                                : '加载中...',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          question['content'] ?? '',
-                          style: const TextStyle(fontSize: 16),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.remove_red_eye,
-                              size: 16,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text('${question['viewCount'] ?? 0}'),
-                            const SizedBox(width: 16),
-                            Icon(
-                              Icons.access_time,
-                              size: 16,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '提问时间：${question['createTime'] ?? ''}',
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withOpacity(0.6),
-                                fontSize: 12,
+                          const SizedBox(height: 8),
+                          Text(
+                            details != null
+                                ? details['content'] ?? '无内容'
+                                : '加载中...',
+                            style: const TextStyle(fontSize: 16),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.thumb_up,
+                                size: 16,
+                                color: Theme.of(context).primaryColor,
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(width: 4),
+                              Text('${question['likeCount'] ?? 0}'),
+                              const SizedBox(width: 16),
+                              Icon(
+                                Icons.access_time,
+                                size: 16,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '创建时间: ${_formatDateTime(question['createTime'])}',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color
+                                      ?.withOpacity(0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
               },
             ),
+    );
+  }
+
+  // 格式化日期时间
+  String _formatDateTime(String? dateTimeStr) {
+    if (dateTimeStr == null) return '未知时间';
+    try {
+      final dateTime = DateTime.parse(dateTimeStr);
+      return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return dateTimeStr;
+    }
+  }
+
+  // 获取状态文本
+  String _getStatusText(int? status) {
+    switch (status) {
+      case 0:
+        return '进行中';
+      case 1:
+        return '已结束';
+      case 2:
+        return '已取消';
+      default:
+        return '未知状态';
+    }
+  }
+
+  // 导航到聊天页面
+  void _navigateToConversation(
+      {required int user2Id,
+      required int questionId,
+      required int conversationId}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ConversationPage(
+          fromQuestion: true,
+          user2Id: user2Id,
+          conversationId: conversationId,
+        ),
+      ),
     );
   }
 }
