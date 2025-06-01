@@ -995,7 +995,7 @@ class UserService {
       final headers = await RequestModel.getHeaders();
 
       final response = await _dio.get(
-        '${ApiConstants.baseUrl}/api/hangzd/user/default-public',
+        '/api/hangzd/user/default-public',
         options: Options(
           headers: headers,
           validateStatus: (status) => status != null && status < 500,
@@ -1024,7 +1024,7 @@ class UserService {
       final headers = await RequestModel.getHeaders();
 
       final response = await _dio.put(
-        '${ApiConstants.baseUrl}/api/hangzd/user/default-public',
+        '/api/hangzd/user/default-public',
         data: {'status': status},
         options: Options(
           headers: headers,

@@ -34,7 +34,9 @@ class _SettingsPageState extends State<SettingsPage> {
         _isLoadingPublicStatus = true;
       });
 
+      // 调用获取默认公开状态的接口
       final status = await _userService.getDefaultPublicStatus();
+      print('获取到的默认公开状态: $status');
 
       setState(() {
         _isDefaultPublic = status == 1;
@@ -60,24 +62,35 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _updateDefaultPublicStatus(bool value) async {
     try {
+      // 先更新UI状态，提供即时反馈
+      setState(() {
+        _isDefaultPublic = value;
+      });
+
+      // 调用设置默认公开状态的接口
       final status = value ? 1 : 0;
       final success = await _userService.setDefaultPublicStatus(status);
 
       if (success) {
-        setState(() {
-          _isDefaultPublic = value;
-        });
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('默认公开状态已更新')),
           );
         }
       } else {
+        // 如果失败，恢复原来的状态
+        setState(() {
+          _isDefaultPublic = !value;
+        });
         throw Exception('服务器返回失败状态');
       }
     } catch (e) {
       print('更新默认公开状态失败: $e');
+
+      // 如果出错，恢复原来的状态
+      setState(() {
+        _isDefaultPublic = !value;
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
