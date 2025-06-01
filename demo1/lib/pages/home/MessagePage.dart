@@ -43,19 +43,24 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
       List<dynamic> tempQuestions = [];
       List<dynamic> tempAnswers = [];
       for (var item in response) {
-        int questionId = item['questionId'];
-        int user2Id = item['user2'];
-        // 获取问题
-        item['question'] = await askService.getQuestionById(questionId);
-        // 获取用户名
-        final userResponse = await userService.getUserById(user2Id);
-        item['user2Name'] = userResponse?['username'];
-        item['user2Avatar'] = userResponse?['avatar'];
-        // 分类
-        if (item['user1'] == -1) {
-          tempQuestions.add(item);
-        } else {
-          tempAnswers.add(item);
+        bool _isPublic = await MessageService().getConversationStatus(item['id']);
+        if (!_isPublic) {
+          // 获取问题
+          item['question'] =
+          await askService.getQuestionById(item['questionId']);
+          // 获取用户名
+          final userResponse = await userService.getUserById(item['user2']);
+          item['user2Name'] = userResponse?['username'];
+          item['user2Avatar'] = userResponse?['avatar'];
+          // 分类
+          if (item['user1'] == -1) {
+            tempQuestions.add(item);
+          } else {
+            final userResponse = await userService.getUserById(item['user1']);
+            item['user1Name'] = userResponse?['username'];
+            item['user1Avatar'] = userResponse?['avatar'];
+            tempAnswers.add(item);
+          }
         }
       }
       setState(() {
@@ -334,10 +339,7 @@ class MyAnswersTab extends StatelessWidget {
         var answer = activeAnswers[index];
         String title = answer['question']['title'];
         String content = answer['question']['content'];
-        String avatar = answer['images'] != null && answer['images'].isNotEmpty
-            ? answer['images'][0]
-            : 'assets/img.png'; // 默认头像
-
+        String avatarUrl = UserService.getFullAvatarUrl(answer['user1Avatar']); // 默认头像
         return GestureDetector(
           onTap: () {
             Navigator.push(
@@ -363,18 +365,23 @@ class MyAnswersTab extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  SizedBox(
-                    width: 0.15 * width,
-                    child: ClipOval(
-                      child: avatar.startsWith('http') ?
-                      Image.network( avatar,
-                        width: 0.15 * width,
-                        height: 0.15 * width,
-                        fit: BoxFit.cover,) :
-                      Image.asset(
-                        avatar,
-                        width: 0.15 * width,
-                        height: 0.15 * width,
+                  ClipOval(
+                    child: avatarUrl.isEmpty
+                        ? Image.asset(
+                      'assets/img.png',
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    )
+                        : Image.network(
+                      avatarUrl,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/img.png',
+                        width: 60,
+                        height: 60,
                         fit: BoxFit.cover,
                       ),
                     ),
