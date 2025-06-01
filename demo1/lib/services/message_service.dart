@@ -294,7 +294,7 @@ class MessageService {
 
   Future<List<dynamic>> getPublicConversations() async{
     print('开始获取公开对话');
-    var response = await http.post(
+    var response = await http.get(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.public}'),
         headers: await RequestModel.getHeaders(),
         );
