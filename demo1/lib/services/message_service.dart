@@ -307,4 +307,39 @@ class MessageService {
       return [];
     }
   }
+
+  Future<bool> getConversationStatus(int conversationId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final username = prefs.getString('username') ?? '';
+
+      final headers = {
+        'token': token,
+        'username': username,
+      };
+
+      final request = http.Request(
+        'GET',
+        Uri.parse('http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/status'),
+      );
+      request.headers.addAll(headers);
+
+      final response = await request.send();
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        return json.decode(responseBody)['data'] != 0;
+      } else {
+        print('获取状态失败: ${response.statusCode} - ${response.reasonPhrase}');
+      }
+    } catch (e) {
+      print('请求 conversation status 失败: $e');
+    }
+
+    // 添加这一行确保总是返回一个 bool 值
+    return false;
+  }
+
+
 }
