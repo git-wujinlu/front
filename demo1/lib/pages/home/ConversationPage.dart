@@ -31,11 +31,18 @@ class _ConversationPageState extends State<ConversationPage> {
   String myUsername = '';
   String otherUsername = '';
   double _keyboardHeight = 0;
+  bool endConversation = false;
 
   @override
   void initState() {
     super.initState();
+    _initialize(); // 异步操作放这里
+  }
+
+  Future<void> _initialize() async {
     _loadMessagesAndAvatars();
+    endConversation = await MessageService().getConversationStatus(widget.conversationId);
+    setState(() {}); // 更新状态
   }
 
   bool isImageUrl(String str) {
@@ -108,7 +115,7 @@ class _ConversationPageState extends State<ConversationPage> {
   }
 
   void _sendMessage(bool type) async {
-    final text;
+    final String? text;
     try {
       if (type) {
         text = _textController.text.trim();
@@ -227,7 +234,7 @@ class _ConversationPageState extends State<ConversationPage> {
                         ),
                       ),
                     ),
-                    if (widget.fromQuestion)
+                    if (!endConversation && widget.fromQuestion)
                       Align(
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
@@ -338,7 +345,8 @@ class _ConversationPageState extends State<ConversationPage> {
       },
     ),
     ),
-            Padding(
+            !endConversation
+                ? Padding(
               padding: EdgeInsets.symmetric(horizontal: 0.05 * width),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -408,7 +416,21 @@ class _ConversationPageState extends State<ConversationPage> {
                   ),
                 ],
               ),
+            )
+                : Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  '当前对话已经结束~',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
             ),
+
             SizedBox(height: 0.02 * height),
           ],
         ),
