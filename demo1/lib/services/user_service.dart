@@ -987,4 +987,60 @@ class UserService {
       throw Exception('获取问题详情失败：$e');
     }
   }
+
+  // 获取默认公开状态
+  Future<int> getDefaultPublicStatus() async {
+    try {
+      print('获取默认公开状态');
+      final headers = await RequestModel.getHeaders();
+
+      final response = await _dio.get(
+        '${ApiConstants.baseUrl}/api/hangzd/user/default-public',
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('获取默认公开状态响应: ${response.data}');
+
+      if (response.data['success'] == true && response.data['data'] != null) {
+        return response.data['data'] as int;
+      }
+      return 0; // 默认不公开
+    } on DioException catch (e) {
+      print('获取默认公开状态失败: ${e.message}');
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      print('获取默认公开状态异常: $e');
+      throw Exception('获取默认公开状态失败：$e');
+    }
+  }
+
+  // 设置默认公开状态
+  Future<bool> setDefaultPublicStatus(int status) async {
+    try {
+      print('设置默认公开状态: $status');
+      final headers = await RequestModel.getHeaders();
+
+      final response = await _dio.put(
+        '${ApiConstants.baseUrl}/api/hangzd/user/default-public',
+        data: {'status': status},
+        options: Options(
+          headers: headers,
+          validateStatus: (status) => status != null && status < 500,
+        ),
+      );
+
+      print('设置默认公开状态响应: ${response.data}');
+
+      return response.data['success'] == true;
+    } on DioException catch (e) {
+      print('设置默认公开状态失败: ${e.message}');
+      throw Exception(ApiErrorHandler.handleError(e));
+    } catch (e) {
+      print('设置默认公开状态异常: $e');
+      throw Exception('设置默认公开状态失败：$e');
+    }
+  }
 }

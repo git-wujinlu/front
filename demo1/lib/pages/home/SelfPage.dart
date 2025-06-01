@@ -55,12 +55,39 @@ class _SelfPageState extends State<SelfPage> {
 
       print('加载的用户标签: $tagsList'); // 添加调试日志
 
-      // 获取用户统计信息
-      // final statsResponse = await _userService.getUserStats();
+      // 获取用户问题和回答数量
+      int questionCount = 0;
+      int answerCount = 0;
+
+      try {
+        // 获取会话列表
+        final conversationsResponse = await _userService.getConversations();
+        if (conversationsResponse['success'] == true &&
+            conversationsResponse['data'] != null) {
+          final conversations = conversationsResponse['data'] as List;
+          final userId = userData['id'] as int?;
+
+          if (userId != null) {
+            // 计算问题数量（用户是提问者）
+            questionCount =
+                conversations.where((conv) => conv['user1'] == userId).length;
+
+            // 计算回答数量（用户是回答者）
+            answerCount =
+                conversations.where((conv) => conv['user2'] == userId).length;
+
+            print('用户问题数量: $questionCount, 回答数量: $answerCount');
+          }
+        }
+      } catch (e) {
+        print('获取问题和回答数量失败: $e');
+        // 失败时不中断整个加载过程
+      }
+
       setState(() {
         _userInfo = userData;
         _tags = tagsList;
-        // _stats = statsResponse['data'];
+        _stats = {'questions': questionCount, 'answers': answerCount};
         _isLoading = false;
       });
     } catch (e) {

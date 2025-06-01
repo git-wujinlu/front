@@ -18,6 +18,74 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _isSecurityExpanded = false;
+  bool _isDefaultPublic = false;
+  bool _isLoadingPublicStatus = true;
+  final UserService _userService = UserService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultPublicStatus();
+  }
+
+  Future<void> _loadDefaultPublicStatus() async {
+    try {
+      setState(() {
+        _isLoadingPublicStatus = true;
+      });
+
+      final status = await _userService.getDefaultPublicStatus();
+
+      setState(() {
+        _isDefaultPublic = status == 1;
+        _isLoadingPublicStatus = false;
+      });
+    } catch (e) {
+      print('加载默认公开状态失败: $e');
+      setState(() {
+        _isDefaultPublic = false; // 默认不公开
+        _isLoadingPublicStatus = false;
+      });
+
+      // 延迟显示错误提示，确保上下文可用
+      Future.delayed(Duration.zero, () {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('加载默认公开状态失败: $e')),
+          );
+        }
+      });
+    }
+  }
+
+  Future<void> _updateDefaultPublicStatus(bool value) async {
+    try {
+      final status = value ? 1 : 0;
+      final success = await _userService.setDefaultPublicStatus(status);
+
+      if (success) {
+        setState(() {
+          _isDefaultPublic = value;
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('默认公开状态已更新')),
+          );
+        }
+      } else {
+        throw Exception('服务器返回失败状态');
+      }
+    } catch (e) {
+      print('更新默认公开状态失败: $e');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('更新默认公开状态失败: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +110,20 @@ class _SettingsPageState extends State<SettingsPage> {
                   themeProvider.toggleTheme();
                 },
               ),
+            ],
+          ),
+          _buildSection(
+            title: '回答设置',
+            children: [
+              _isLoadingPublicStatus
+                  ? _buildLoadingTile(title: '默认公开回答')
+                  : _buildSwitchTile(
+                      icon: Icons.public,
+                      title: '默认公开回答',
+                      subtitle: '开启后，您的回答将默认对所有人可见',
+                      value: _isDefaultPublic,
+                      onChanged: _updateDefaultPublicStatus,
+                    ),
             ],
           ),
           _buildSection(
@@ -183,6 +265,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _buildSwitchTile({
     required IconData icon,
     required String title,
+    String? subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
@@ -203,6 +286,15 @@ class _SettingsPageState extends State<SettingsPage> {
             color: Theme.of(context).textTheme.bodyMedium?.color,
           ),
         ),
+        subtitle: subtitle != null
+            ? Text(
+                subtitle,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodySmall?.color,
+                  fontSize: 12,
+                ),
+              )
+            : null,
         trailing: Switch(
           value: value,
           onChanged: onChanged,
@@ -608,6 +700,38 @@ class _SettingsPageState extends State<SettingsPage> {
           duration: const Duration(milliseconds: 300),
         ),
       ],
+    );
+  }
+
+  Widget _buildLoadingTile({required String title}) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+      ),
+      child: ListTile(
+        leading: Icon(Icons.public, color: Theme.of(context).primaryColor),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
+        ),
+        trailing: SizedBox(
+          width: 24,
+          height: 24,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Theme.of(context).primaryColor,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
