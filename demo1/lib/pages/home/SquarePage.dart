@@ -21,18 +21,17 @@ class _SquarePageState extends State<SquarePage> {
   final messageService = MessageService();
   Future<List<dynamic>>? _questionsList;
   List<int> ids = [];
+  int nowPage = 0;
 
   Future<List<dynamic>> getQuestions() async {
-    messageService.getPublicConversations();
-    return [
-      {
-        'id': 1,
-        'username': 'tmpUser',
-        'title': 'tmpTitle',
-        'content': 'tmpContent',
-        'likeCount': 1
-      }
-    ];
+    print("准备获取第${nowPage + 1}页公开对话");
+    Map<String, dynamic> publics =
+        await messageService.getPublicConversations(nowPage + 1, 10);
+    if (publics['records'].length > 0) {
+      ++nowPage;
+      return publics['records'];
+    }
+    return [];
   }
 
   @override
@@ -79,49 +78,8 @@ class _SquarePageState extends State<SquarePage> {
   }
 
   Future<dynamic> getQuestion(int id) async {
-    final prefs = await SharedPreferences.getInstance();
-    String myUsername = prefs.getString('username') ?? '';
-    List<dynamic> _messages = [];
+    List<dynamic> _messages = await messageService.getConversationById(id);
 
-    try {
-      // final user = await UserService().getUserById(widget.user2Id);
-      // String otherUsername = user?['username'];
-      // final messagesResponse1 = await MessageService().getMessagesBetweenUsers(
-      //     myUsername, otherUsername, widget.conversationId);
-      // final messagesResponse2 = await MessageService().getMessagesBetweenUsers(
-      //     otherUsername, myUsername, widget.conversationId);
-      // final data1 = messagesResponse1['data'] as List;
-      // final data2 = messagesResponse2['data'] as List;
-      // final messagesFromMe = data1
-      //     .map((msg) => {
-      //           'text': msg['content'],
-      //           'isMe': true,
-      //           'createTime': msg['createTime'],
-      //         })
-      //     .toList();
-      //
-      // final messagesFromOther = data2
-      //     .map((msg) => {
-      //           'text': msg['content'],
-      //           'isMe': false,
-      //           'createTime': msg['createTime'],
-      //         })
-      //     .toList();
-      //
-      // final combinedMessages = [...messagesFromMe, ...messagesFromOther];
-      //
-      // combinedMessages
-      //     .sort((a, b) => a['createTime'].compareTo(b['createTime']));
-      //
-      // _messages = combinedMessages
-      //     .map((msg) => {
-      //           'text': msg['text'],
-      //           'isMe': msg['isMe'],
-      //         })
-      //     .toList();
-    } catch (e) {
-      print('加载消息或头像失败: $e');
-    }
     return _messages;
   }
 

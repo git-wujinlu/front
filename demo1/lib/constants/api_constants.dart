@@ -28,6 +28,7 @@ class ApiConstants {
   static const String recommend = '$question/recommend';
 
   // 对话相关接口
+  static const String getConversation = '/api/hangzd/messages/conversation';
   static const String conversations = '/api/hangzd/conversations';
   static const String public = '$conversations/public';
 

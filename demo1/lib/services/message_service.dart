@@ -144,9 +144,7 @@ class MessageService {
         'PUT',
         Uri.parse('http://43.143.231.162:8000/api/hangzd/user/like'),
       );
-      request.body = json.encode({
-        'cid' : conversationId
-      });
+      request.body = json.encode({'cid': conversationId});
       request.headers.addAll(headers);
       final response = await request.send();
       if (response.statusCode == 200) {
@@ -220,14 +218,11 @@ class MessageService {
         print('上传失败: ${response.statusCode} - ${response.reasonPhrase}');
         return null;
       }
-
     } catch (e) {
       print('上传图片失败: $e');
       return null;
     }
   }
-
-
 
   Future<void> endConversation(int conversationId) async {
     try {
@@ -293,18 +288,20 @@ class MessageService {
     }
   }
 
-  Future<List<dynamic>> getPublicConversations() async{
+  Future<Map<String, dynamic>> getPublicConversations(
+      int page, int size) async {
     print('开始获取公开对话');
     var response = await http.get(
-        Uri.parse('${ApiConstants.baseUrl}${ApiConstants.public}'),
-        headers: await RequestModel.getHeaders(),
-        );
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.public}')
+          .replace(queryParameters: {'current': '$page', 'size': '$size'}),
+      headers: await RequestModel.getHeaders(),
+    );
     if (jsonDecode(response.body)['success'] == true) {
       print('公开对话结果：${jsonDecode(response.body)}');
-      return [];
+      return jsonDecode(response.body)['data'];
     } else {
       print('公开对话error: ${jsonDecode(response.body)}');
-      return [];
+      return jsonDecode(response.body)['data'];
     }
   }
 
@@ -321,7 +318,8 @@ class MessageService {
 
       final request = http.Request(
         'GET',
-        Uri.parse('http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/status'),
+        Uri.parse(
+            'http://43.143.231.162:8000/api/hangzd/conversation/$conversationId/status'),
       );
       request.headers.addAll(headers);
 
@@ -341,5 +339,19 @@ class MessageService {
     return false;
   }
 
-
+  Future<List<dynamic>> getConversationById(int id) async{
+    print('开始获取id为$id 的对话内容');
+    var response = await http.get(
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.getConversation}/$id'),
+      headers: await RequestModel.getHeaders(),
+    );
+    if (jsonDecode(response.body)['success'] == true) {
+      print('对话内容结果：${jsonDecode(response.body)}');
+      // return jsonDecode(response.body)['data'];
+    } else {
+      print('对话内容error: ${jsonDecode(response.body)}');
+      // return jsonDecode(response.body)['data'];
+    }
+    return [];
+  }
 }
