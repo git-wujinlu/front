@@ -18,19 +18,12 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
   final AskService askService = AskService(); // 实例化 UserService
   final UserService userService = UserService();
 
-  @override
+    @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    //askService.askQuestion("Q4", "one question two answerer", [1,3]);
     getConversations();
   }
-
-  Future<String> getUser2Name(int user2Id) async {
-    final res = await userService.getUserById(user2Id);
-    return res?['data']['username'];
-  }
-
 
   // Get active questions
   Future<void> getConversations() async {
@@ -43,8 +36,8 @@ class _MessagePageState extends State<MessagePage> with SingleTickerProviderStat
       List<dynamic> tempQuestions = [];
       List<dynamic> tempAnswers = [];
       for (var item in response) {
-        bool _isPublic = await MessageService().getConversationStatus(item['id']);
-        if (!_isPublic) {
+        bool isPublic = await MessageService().getConversationStatus(item['id']);
+        if (!isPublic) {
           // 获取问题
           item['question'] =
           await askService.getQuestionById(item['questionId']);
@@ -187,7 +180,7 @@ class _MyQuestionsTabState extends State<MyQuestionsTab> {
         int questionId = entry.key;
         List<dynamic> conversations = entry.value;
         String title = conversations[0]['question']['title'];
-        String content = conversations[0]['question']['content'];
+        String content = conversations[0]['question']['content'] ?? '';
 
         bool isExpanded = _expandedMap[questionId] ?? false;
 
@@ -338,7 +331,7 @@ class MyAnswersTab extends StatelessWidget {
       itemBuilder: (context, index) {
         var answer = activeAnswers[index];
         String title = answer['question']['title'];
-        String content = answer['question']['content'];
+        String content = answer['question']['content'] ?? ' ';
         String avatarUrl = UserService.getFullAvatarUrl(answer['user1Avatar']); // 默认头像
         return GestureDetector(
           onTap: () {
