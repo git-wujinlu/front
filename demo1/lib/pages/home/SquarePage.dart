@@ -20,13 +20,14 @@ class SquarePage extends StatefulWidget {
 class _SquarePageState extends State<SquarePage> {
   final messageService = MessageService();
   Future<List<dynamic>>? _questionsList;
+  final TextEditingController _searchController = TextEditingController();
   List<int> ids = [];
   int nowPage = 0;
 
-  Future<List<dynamic>> getQuestions() async {
+  Future<List<dynamic>> getQuestions(String s) async {
     print("准备获取第${nowPage + 1}页公开对话");
     Map<String, dynamic> publics =
-        await messageService.getPublicConversations(nowPage + 1, 10);
+        await messageService.getPublicConversations(nowPage + 1, 10, s);
     if (publics['records'].length > 0) {
       ++nowPage;
       return publics['records'];
@@ -36,7 +37,7 @@ class _SquarePageState extends State<SquarePage> {
 
   @override
   void initState() {
-    _questionsList = getQuestions();
+    _questionsList = getQuestions("");
     _questionsList?.then((data) {
       print("已公开${data.length}个问题");
       for (int i = 0; i < data.length; ++i) {
@@ -48,38 +49,24 @@ class _SquarePageState extends State<SquarePage> {
     super.initState();
   }
 
-  Future<void> toSearch(String s) {
-    return Future.delayed(Duration(seconds: 0));
-    // if (s.isEmpty) {
-    //   return Future.delayed(Duration(seconds: 0));
-    // }
-    // return Navigator.of(context).push(
-    //   PageRouteBuilder(
-    //     pageBuilder: (context, animation, secondaryAnimation) =>
-    //         SearchResultPage(searchString: s),
-    //     transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    //       const begin = Offset(0.0, 0.3);
-    //       const end = Offset.zero;
-    //       const curve = Curves.ease;
-    //
-    //       final tween = Tween(begin: begin, end: end);
-    //       final curvedAnimation = CurvedAnimation(
-    //         parent: animation,
-    //         curve: curve,
-    //       );
-    //
-    //       return SlideTransition(
-    //         position: tween.animate(curvedAnimation),
-    //         child: child,
-    //       );
-    //     },
-    //   ),
-    // );
+  void toSearch(String s) {
+    nowPage = 0;
+    ids.clear();
+    setState(() {
+      _questionsList = getQuestions(s);
+      _questionsList?.then((data) {
+        print("已公开${data.length}个问题");
+        for (int i = 0; i < data.length; ++i) {
+          print("已设置第一个问题的id为${data[i]['id']}");
+          ids.add(data[i]['id']);
+        }
+        print(ids);
+      });
+    });
   }
 
   Future<dynamic> getQuestion(int id) async {
     List<dynamic> _messages = await messageService.getConversationById(id);
-
     return _messages;
   }
 
@@ -90,7 +77,6 @@ class _SquarePageState extends State<SquarePage> {
     final size = MediaQuery.of(context).size;
     final height = size.height;
     final width = size.width;
-    final TextEditingController _searchController = TextEditingController();
     return Scaffold(
         body: SafeArea(
             child: Center(
@@ -107,7 +93,7 @@ class _SquarePageState extends State<SquarePage> {
                   borderSide: BorderSide(width: 1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                hintText: '输入你想问的问题',
+                hintText: '输入你想搜索的问题',
                 prefixIcon: IconButton(
                   icon: Icon(Icons.search),
                   color: Theme.of(context).iconTheme.color,
@@ -116,7 +102,10 @@ class _SquarePageState extends State<SquarePage> {
                 suffixIcon: IconButton(
                   icon: Icon(Icons.clear),
                   color: Theme.of(context).iconTheme.color,
-                  onPressed: _searchController.clear,
+                  onPressed: () {
+                    _searchController.clear;
+                    toSearch('');
+                  },
                 ),
               ),
             ),

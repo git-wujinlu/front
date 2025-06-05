@@ -1,4 +1,6 @@
 import 'package:demo1/pages/home/AskResultPage.dart';
+import 'package:demo1/services/ask_service.dart';
+import 'package:demo1/services/message_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
@@ -44,6 +46,33 @@ class _AskPageState extends State<AskPage> {
         },
       ),
     );
+  }
+
+  Future<List<dynamic>> getConversation() async {
+    final messageService = MessageService();
+    final askService = AskService();
+    List<dynamic> _tmpList = await messageService.getConversationList();
+    List<dynamic> ans = [];
+    for (var item in _tmpList) {
+      if (item['user1'] != -1) continue;
+      final question = await askService.getQuestionById(item['questionId']);
+      print(item);
+      ans.add({
+        'title': question?['title'],
+        'content': question?['content'],
+        'createTime': item['createTime'],
+        'id': item['id'],
+        'status': item['status'],
+        'user2Id': item['user2'],
+      });
+    }
+    return ans;
+  }
+
+  @override
+  void initState() {
+    _questionsList = getConversation();
+    super.initState();
   }
 
   @override
@@ -122,9 +151,10 @@ class _AskPageState extends State<AskPage> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => ConversationPage(
-                                        fromQuestion: false,
-                                        user2Id: snapshot.data?[index]['username'],
-                                        conversationId: 114514,
+                                      fromQuestion: false,
+                                      user2Id: snapshot.data?[index]
+                                          ['user2Id'],
+                                      conversationId: snapshot.data?[index]['id'],
                                     ),
                                   ),
                                 );

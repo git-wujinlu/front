@@ -289,11 +289,20 @@ class MessageService {
   }
 
   Future<Map<String, dynamic>> getPublicConversations(
-      int page, int size) async {
+      int page, int size, String keyword) async {
     print('开始获取公开对话');
     var response = await http.get(
-      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.public}')
-          .replace(queryParameters: {'current': '$page', 'size': '$size'}),
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.public}').replace(
+          queryParameters: keyword.isEmpty
+              ? {
+                  'current': '$page',
+                  'size': '$size',
+                }
+              : {
+                  'current': '$page',
+                  'size': '$size',
+                  'keyword': keyword,
+                }),
       headers: await RequestModel.getHeaders(),
     );
     if (jsonDecode(response.body)['success'] == true) {
@@ -339,7 +348,7 @@ class MessageService {
     return false;
   }
 
-  Future<List<dynamic>> getConversationById(int id) async{
+  Future<List<dynamic>> getConversationById(int id) async {
     print('开始获取id为$id 的对话内容');
     var response = await http.get(
       Uri.parse('${ApiConstants.baseUrl}${ApiConstants.getConversation}/$id'),
