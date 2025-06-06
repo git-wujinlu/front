@@ -285,7 +285,7 @@ class _SquarePageState extends State<SquarePage> {
                                     width: 0.94 * width,
                                     padding: EdgeInsets.only(top: 5),
                                     child: Text(
-                                      snapshot.data?[index]['content'],
+                                      snapshot.data?[index]['content']?? '',
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.left,
