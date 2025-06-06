@@ -356,7 +356,7 @@ class MessageService {
     );
     if (jsonDecode(response.body)['success'] == true) {
       print('对话内容结果：${jsonDecode(response.body)}');
-      // return jsonDecode(response.body)['data'];
+      return jsonDecode(response.body)['data'];
     } else {
       print('对话内容error: ${jsonDecode(response.body)}');
       // return jsonDecode(response.body)['data'];

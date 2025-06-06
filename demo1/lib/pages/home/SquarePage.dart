@@ -20,14 +20,16 @@ class SquarePage extends StatefulWidget {
 class _SquarePageState extends State<SquarePage> {
   final messageService = MessageService();
   Future<List<dynamic>>? _questionsList;
+  String _searchText = '';
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   List<int> ids = [];
   int nowPage = 0;
 
-  Future<List<dynamic>> getQuestions(String s) async {
+  Future<List<dynamic>> getQuestions() async {
     print("准备获取第${nowPage + 1}页公开对话");
-    Map<String, dynamic> publics =
-        await messageService.getPublicConversations(nowPage + 1, 10, s);
+    Map<String, dynamic> publics = await messageService.getPublicConversations(
+        nowPage + 1, 10, _searchText);
     if (publics['records'].length > 0) {
       ++nowPage;
       return publics['records'];
@@ -37,27 +39,44 @@ class _SquarePageState extends State<SquarePage> {
 
   @override
   void initState() {
-    _questionsList = getQuestions("");
+    _questionsList = getQuestions();
     _questionsList?.then((data) {
       print("已公开${data.length}个问题");
       for (int i = 0; i < data.length; ++i) {
-        print("已设置第一个问题的id为${data[i]['id']}");
+        print("已设置第${ids.length + 1}个问题的id为${data[i]['id']}");
         ids.add(data[i]['id']);
       }
       print(ids);
+    });
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels ==
+          _scrollController.position.maxScrollExtent) {
+        _questionsList?.then((data) {
+          getQuestions().then((newData) {
+            for (int i = 0; i < newData.length; ++i) {
+              print("已设置第${ids.length + 1}个问题的id为${newData[i]['id']}");
+              ids.add(newData[i]['id']);
+            }
+            setState(() {
+              data.addAll(newData);
+            });
+          });
+        });
+      }
     });
     super.initState();
   }
 
   void toSearch(String s) {
     nowPage = 0;
+    _searchText = s;
     ids.clear();
     setState(() {
-      _questionsList = getQuestions(s);
+      _questionsList = getQuestions();
       _questionsList?.then((data) {
         print("已公开${data.length}个问题");
         for (int i = 0; i < data.length; ++i) {
-          print("已设置第一个问题的id为${data[i]['id']}");
+          print("已设置第${ids.length + 1}个问题的id为${data[i]['id']}");
           ids.add(data[i]['id']);
         }
         print(ids);
@@ -72,7 +91,6 @@ class _SquarePageState extends State<SquarePage> {
 
   @override
   Widget build(BuildContext context) {
-    DateTime now = DateTime.now();
     final dateFormat = DateFormat("yyyy-MM-dd HH:mm:ss");
     final size = MediaQuery.of(context).size;
     final height = size.height;
@@ -103,7 +121,7 @@ class _SquarePageState extends State<SquarePage> {
                   icon: Icon(Icons.clear),
                   color: Theme.of(context).iconTheme.color,
                   onPressed: () {
-                    _searchController.clear;
+                    _searchController.text='';
                     toSearch('');
                   },
                 ),
@@ -148,7 +166,12 @@ class _SquarePageState extends State<SquarePage> {
                                               if (snapshot.connectionState ==
                                                   ConnectionState.waiting) {
                                                 return CircularProgressIndicator();
-                                              } else if (snapshot.hasData) {
+                                              } else if (snapshot
+                                                      .data?.isNotEmpty ??
+                                                  false) {
+                                                int asker = snapshot.data?[
+                                                    (snapshot.data?.length) -
+                                                        1]['fromId'];
                                                 return ListView.builder(
                                                   padding: EdgeInsets.symmetric(
                                                       horizontal: 0.05 * width,
@@ -158,10 +181,13 @@ class _SquarePageState extends State<SquarePage> {
                                                   itemBuilder:
                                                       (context, index) {
                                                     final msg = snapshot.data?[
-                                                        snapshot.data?.length -
+                                                        (snapshot
+                                                                .data?.length) -
                                                             1 -
                                                             index];
-                                                    final isMe = msg['isMe'];
+                                                    print(msg);
+                                                    final isMe =
+                                                        msg['fromId'] == asker;
 
                                                     final bubble = Container(
                                                       constraints:
@@ -184,7 +210,7 @@ class _SquarePageState extends State<SquarePage> {
                                                                 .circular(8),
                                                       ),
                                                       child: Text(
-                                                        msg['text'],
+                                                        msg['content'],
                                                         style: TextStyle(
                                                           fontSize: 16,
                                                           color: isMe
@@ -207,56 +233,19 @@ class _SquarePageState extends State<SquarePage> {
                                                             CrossAxisAlignment
                                                                 .start,
                                                         children: [
-                                                          // if (!isMe) ...[avatar, const SizedBox(width: 8)],
                                                           bubble,
-                                                          // if (isMe) ...[const SizedBox(width: 8), avatar],
                                                         ],
                                                       ),
                                                     );
                                                   },
                                                 );
+                                              } else if (snapshot
+                                                  .data.isEmpty) {
+                                                return Text("无详细对话");
                                               } else {
                                                 return Text("错误");
                                               }
                                             }),
-                                        // child: ListView.builder(
-                                        //   padding: EdgeInsets.symmetric(horizontal: 0.05 * width, vertical: 8),
-                                        //   itemCount: _messages.length,
-                                        //   itemBuilder: (context, index) {
-                                        //     final msg = _messages[_messages.length - 1 - index];
-                                        //     final isMe = msg['isMe'];
-                                        //
-                                        //     final bubble = Container(
-                                        //       constraints: BoxConstraints(maxWidth: 0.7 * width),
-                                        //       margin: const EdgeInsets.symmetric(vertical: 4),
-                                        //       padding: const EdgeInsets.all(10),
-                                        //       decoration: BoxDecoration(
-                                        //         color: isMe ? Colors.purple.shade700 : Colors.white,
-                                        //         borderRadius: BorderRadius.circular(8),
-                                        //       ),
-                                        //       child: Text(
-                                        //         msg['text'],
-                                        //         style: TextStyle(
-                                        //           fontSize: 16,
-                                        //           color: isMe ? Colors.white : Colors.black,
-                                        //         ),
-                                        //       ),
-                                        //     );
-                                        //
-                                        //     return Align(
-                                        //       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                                        //       child: Row(
-                                        //         mainAxisSize: MainAxisSize.min,
-                                        //         crossAxisAlignment: CrossAxisAlignment.start,
-                                        //         children: [
-                                        //           // if (!isMe) ...[avatar, const SizedBox(width: 8)],
-                                        //           bubble,
-                                        //           // if (isMe) ...[const SizedBox(width: 8), avatar],
-                                        //         ],
-                                        //       ),
-                                        //     );
-                                        //   },
-                                        // ),
                                       )),
                                       actions: [
                                         TextButton(
@@ -312,7 +301,14 @@ class _SquarePageState extends State<SquarePage> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          dateFormat.format(now),
+                                          dateFormat.format(
+                                              snapshot.data?[index]
+                                                          ['createTime'] !=
+                                                      null
+                                                  ? DateTime.parse(
+                                                      snapshot.data?[index]
+                                                          ['createTime'])
+                                                  : DateTime.now()),
                                           textAlign: TextAlign.left,
                                           style: TextStyle(
                                             fontSize: 16,
@@ -349,6 +345,7 @@ class _SquarePageState extends State<SquarePage> {
                           );
                         },
                         itemCount: snapshot.data?.length,
+                        controller: _scrollController,
                       );
                     } else {
                       return Text('暂无待回答问题');

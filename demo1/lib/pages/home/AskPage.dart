@@ -1,6 +1,7 @@
 import 'package:demo1/pages/home/AskResultPage.dart';
 import 'package:demo1/services/ask_service.dart';
 import 'package:demo1/services/message_service.dart';
+import 'package:demo1/services/user_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
@@ -54,7 +55,7 @@ class _AskPageState extends State<AskPage> {
     List<dynamic> _tmpList = await messageService.getConversationList();
     List<dynamic> ans = [];
     for (var item in _tmpList) {
-      if (item['user1'] != -1) continue;
+      if (item['user1'] == -1) continue;
       final question = await askService.getQuestionById(item['questionId']);
       print(item);
       ans.add({
@@ -77,7 +78,6 @@ class _AskPageState extends State<AskPage> {
 
   @override
   Widget build(BuildContext context) {
-    DateTime now = DateTime.now();
     final dateFormat = DateFormat("yyyy-MM-dd HH:mm:ss");
     final size = MediaQuery.of(context).size;
     final height = size.height;
@@ -142,7 +142,7 @@ class _AskPageState extends State<AskPage> {
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return CircularProgressIndicator();
-                      } else if (snapshot.hasData) {
+                      } else if (snapshot.data?.isNotEmpty??false) {
                         return ListView.builder(
                           itemBuilder: (context, index) {
                             return GestureDetector(
@@ -152,9 +152,9 @@ class _AskPageState extends State<AskPage> {
                                   MaterialPageRoute(
                                     builder: (context) => ConversationPage(
                                       fromQuestion: false,
-                                      user2Id: snapshot.data?[index]
-                                          ['user2Id'],
-                                      conversationId: snapshot.data?[index]['id'],
+                                      user2Id: snapshot.data?[index]['user2Id'],
+                                      conversationId: snapshot.data?[index]
+                                          ['id'],
                                     ),
                                   ),
                                 );
@@ -173,7 +173,9 @@ class _AskPageState extends State<AskPage> {
                                       children: [
                                         Expanded(
                                           child: Text(
-                                            dateFormat.format(now),
+                                            dateFormat.format(DateTime.parse(
+                                                snapshot.data?[index]
+                                                    ['createTime'])),
                                             textAlign: TextAlign.left,
                                             style: TextStyle(
                                               fontSize: 16,
@@ -186,22 +188,45 @@ class _AskPageState extends State<AskPage> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.end,
                                             children: [
-                                              Container(
-                                                width: 66,
-                                                height: 28,
-                                                decoration: BoxDecoration(
-                                                  color: Colors.deepPurple,
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    '待解答',
-                                                    style: TextStyle(
-                                                        color: Colors.white),
-                                                  ),
-                                                ),
-                                              ),
+                                              snapshot.data?[index]['status'] ==
+                                                      0
+                                                  ? Container(
+                                                      width: 66,
+                                                      height: 28,
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors.deepPurple,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Center(
+                                                        child: Text(
+                                                          '待解答',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white),
+                                                        ),
+                                                      ),
+                                                    )
+                                                  : Container(
+                                                      width: 66,
+                                                      height: 28,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.green,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Center(
+                                                        child: Text(
+                                                          '已解决',
+                                                          style: TextStyle(
+                                                              color:
+                                                                  Colors.white),
+                                                        ),
+                                                      ),
+                                                    )
                                             ],
                                           ),
                                         ),
