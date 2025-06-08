@@ -44,7 +44,7 @@ class AskService {
       int questionId = jsonDecode(response.body)['data']['id'];
       final MessageService messageService = MessageService();
       for (int i = 0; i < ids.length; ++i) {
-        messageService.makeConversation(ids[i], questionId);
+        messageService.makeConversation(ids[i], questionId, content);
       }
       return true;
     } else {

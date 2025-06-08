@@ -14,7 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MessageService {
   final userService = UserService();
 
-  Future<bool> makeConversation(int user2, int questionId) async {
+  Future<bool> makeConversation(
+      int user2, int questionId, String content) async {
     var response = await http.post(
       Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conversation}'),
       headers: await RequestModel.getHeaders(),
@@ -25,6 +26,7 @@ class MessageService {
     );
     if (jsonDecode(response.body)['success'] == true) {
       print('与$user2 创建对话成功：${jsonDecode(response.body)}');
+      addMessage(user2, jsonDecode(response.body)['data'], content);
       return true;
     } else {
       print('与$user2 创建对话error： ${jsonDecode(response.body)}');
@@ -364,7 +366,7 @@ class MessageService {
     return [];
   }
 
-  Future<void> likeConversation(int id)async{
+  Future<void> likeConversation(int id) async {
     var response = await http.post(
       Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conversation}/$id/like'),
       headers: await RequestModel.getHeaders(),
