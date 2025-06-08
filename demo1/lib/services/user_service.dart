@@ -43,8 +43,8 @@ class UserService {
       : _dio = Dio(
           BaseOptions(
             baseUrl: ApiConstants.baseUrl,
-            connectTimeout: Duration(milliseconds: ApiConstants.connectTimeout),
-            receiveTimeout: Duration(milliseconds: ApiConstants.receiveTimeout),
+            connectTimeout: const Duration(milliseconds: ApiConstants.connectTimeout),
+            receiveTimeout: const Duration(milliseconds: ApiConstants.receiveTimeout),
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
@@ -54,12 +54,6 @@ class UserService {
     print('初始化UserService，使用真实后端: ${ApiConstants.baseUrl}');
   }
 
-  Future<void> _clearOldData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('username');
-    CaptchaOwner = null; // 清除验证码 cookie
-  }
 
   // 获取登录验证码
   Future<Uint8List> captcha() async {
@@ -68,7 +62,7 @@ class UserService {
       final headers = await RequestModel.getHeaders();
       print('验证码请求头: ${headers.keys}'); // 只打印键名，不打印敏感信息
 
-      final url = '${ApiConstants.baseUrl}${ApiConstants.captcha}';
+      const url = '${ApiConstants.baseUrl}${ApiConstants.captcha}';
       print('请求验证码URL: $url');
 
       final response = await http.get(Uri.parse(url), headers: headers);
@@ -109,7 +103,7 @@ class UserService {
   }
 
   // 登录
-  Future<bool> login(String username, String password, String code) async {
+  Future <String> login(String username, String password, String code) async {
     Map<String, String> headers = await RequestModel.getHeaders();
     headers['cookie'] = CaptchaOwner!;
     print('登录请求头: $headers');
@@ -126,16 +120,15 @@ class UserService {
     print('登录响应状态码: ${response.statusCode}');
     print('登录响应体: ${response.body}');
     print('解析后的响应数据: ${jsonDecode(response.body)}');
-
-    if (response.statusCode == 200) {
+    var parsed = jsonDecode(response.body);
+    bool success = parsed['success'];
+    if (success) {
       print(jsonDecode(response.body));
       final prefs = await SharedPreferences.getInstance();
       prefs.setString('token', jsonDecode(response.body)['data']['token']);
       prefs.setString('username', username);
-      return (true);
-    } else {
-      return (false);
     }
+    return response.body;
   }
 
   // 验证码
@@ -146,7 +139,7 @@ class UserService {
   }
 
   // 注册
-  Future<bool> signUp(
+  Future <String> signUp(
       String username, String password, String mail, String code) async {
     final response = await http.post(
         Uri.parse('${ApiConstants.baseUrl}${ApiConstants.user}'),
@@ -157,12 +150,7 @@ class UserService {
           "code": code,
         }),
         headers: await RequestModel.getHeaders());
-    print(response.body);
-    if (jsonDecode(response.body)['success'] == true) {
-      return (true);
-    } else {
-      return (false);
-    }
+    return response.body;
   }
 
   // 获取用户信息（通过用户名）
@@ -315,7 +303,7 @@ class UserService {
 
       print('FormData字段: ${formData.fields}');
       print(
-          'FormData文件: ${formData.files.map((e) => e.key + ': ' + e.value.filename!).join(', ')}');
+          'FormData文件: ${formData.files.map((e) => '${e.key}: ${e.value.filename!}').join(', ')}');
 
       print('调用文件上传接口: ${ApiConstants.baseUrl}${ApiConstants.fileUpload}');
 
@@ -594,8 +582,8 @@ class UserService {
           headers: headers,
           contentType: 'application/json',
           validateStatus: (status) => status != null && status < 500,
-          receiveTimeout: Duration(seconds: 15),
-          sendTimeout: Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(seconds: 15),
         ),
       );
 
@@ -617,7 +605,7 @@ class UserService {
             print('尝试发送确认请求，确保密码已更新...');
 
             // 延迟一小段时间，确保服务器处理完第一个请求
-            await Future.delayed(Duration(milliseconds: 500));
+            await Future.delayed(const Duration(milliseconds: 500));
 
             // 再次发送相同的请求
             final confirmResponse = await _dio.put(
@@ -909,8 +897,10 @@ class UserService {
       print('==== 开始验证密码修改是否生效 ====');
       // 尝试使用新密码登录
       final loginResult = await login(username, newPassword, code);
+      final Map<String, dynamic> jsonMap = jsonDecode(loginResult);
+      bool success = jsonMap['success'] == true;
 
-      if (loginResult) {
+      if (success) {
         print('使用新密码登录成功，密码修改已生效');
         return true;
       } else {
