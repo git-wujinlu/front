@@ -386,6 +386,6 @@ class _SelfPageState extends State<SelfPage> {
     }
 
     // 如果出错或没有头像，返回默认图片
-    return const NetworkImage('https://img.icons8.com/ios/50/user--v1.png');
+    return const AssetImage('assets/img.png');
   }
 }

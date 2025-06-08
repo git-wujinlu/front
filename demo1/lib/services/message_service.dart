@@ -363,4 +363,17 @@ class MessageService {
     }
     return [];
   }
+
+  Future<void> likeConversation(int id)async{
+    var response = await http.post(
+      Uri.parse('${ApiConstants.baseUrl}${ApiConstants.conversation}/$id/like'),
+      headers: await RequestModel.getHeaders(),
+    );
+    if (jsonDecode(response.body)['success'] == true) {
+      print('点赞结果：${jsonDecode(response.body)}');
+    } else {
+      print('点赞error: ${jsonDecode(response.body)}');
+    }
+    return;
+  }
 }

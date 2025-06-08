@@ -57,15 +57,16 @@ class _AskPageState extends State<AskPage> {
     for (var item in _tmpList) {
       if (item['user1'] == -1) continue;
       final question = await askService.getQuestionById(item['questionId']);
-      print(item);
       ans.add({
         'title': question?['title'],
         'content': question?['content'],
         'createTime': item['createTime'],
         'id': item['id'],
         'status': item['status'],
+        'user1Id': item['user1'],
         'user2Id': item['user2'],
       });
+      print(ans);
     }
     return ans;
   }
@@ -152,7 +153,7 @@ class _AskPageState extends State<AskPage> {
                                   MaterialPageRoute(
                                     builder: (context) => ConversationPage(
                                       fromQuestion: false,
-                                      user2Id: snapshot.data?[index]['user2Id'],
+                                      user2Id: snapshot.data?[index]['user1Id'],
                                       conversationId: snapshot.data?[index]
                                           ['id'],
                                     ),

@@ -121,7 +121,7 @@ class _SquarePageState extends State<SquarePage> {
                   icon: Icon(Icons.clear),
                   color: Theme.of(context).iconTheme.color,
                   onPressed: () {
-                    _searchController.text='';
+                    _searchController.text = '';
                     toSearch('');
                   },
                 ),
@@ -285,7 +285,7 @@ class _SquarePageState extends State<SquarePage> {
                                     width: 0.94 * width,
                                     padding: EdgeInsets.only(top: 5),
                                     child: Text(
-                                      snapshot.data?[index]['content'],
+                                      snapshot.data?[index]['content'] ?? '',
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       textAlign: TextAlign.left,
@@ -317,26 +317,56 @@ class _SquarePageState extends State<SquarePage> {
                                         ),
                                       ),
                                       Expanded(
+                                          child: GestureDetector(
                                         child: Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.end,
                                           children: [
                                             Icon(
                                               Icons.thumb_up,
-                                              color: Colors.red,
-                                              size: 20,
+                                              color: snapshot.data?[index]
+                                                          ['likeStatus'] ==
+                                                      '已点赞'
+                                                  ? Colors.red
+                                                  : Colors.deepPurple.shade300,
+                                              size: 24,
                                             ),
                                             Text(
                                               snapshot.data?[index]['likeCount']
                                                   .toString() as String,
                                               style: TextStyle(
-                                                color: Colors.red,
-                                                fontSize: 16,
+                                                color: snapshot.data?[index]
+                                                            ['likeStatus'] ==
+                                                        '已点赞'
+                                                    ? Colors.red
+                                                    : Colors
+                                                        .deepPurple.shade300,
+                                                fontSize: 20,
                                               ),
                                             ),
                                           ],
                                         ),
-                                      ),
+                                        onTap: () {
+                                          messageService
+                                              .likeConversation(ids[index]);
+                                          if (snapshot.data?[index]
+                                                  ['likeStatus'] ==
+                                              '已点赞') {
+                                            snapshot.data?[index]
+                                                ['likeStatus'] = '未点赞';
+                                            snapshot.data?[index]
+                                                ['likeCount']--;
+                                          } else {
+                                            snapshot.data?[index]
+                                                ['likeStatus'] = '已点赞';
+                                            snapshot.data?[index]
+                                                ['likeCount']++;
+                                          }
+                                          setState(() {});
+                                          print(snapshot.data?[index]
+                                              ['likeStatus']);
+                                        },
+                                      )),
                                     ],
                                   ),
                                 ],
