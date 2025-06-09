@@ -215,7 +215,7 @@ class _AskResultPageState extends State<AskResultPage> {
                                         ),
                                         SizedBox(width: 0.02 * width),
                                         Text(
-                                          "回答数：${(snapshot.data?[index]['usefulCount'].toString()) as String}",
+                                          "回答数：${(snapshot.data?[index]['userful_count'].toString()) as String}",
                                           style: TextStyle(
                                             fontSize: 18,
                                             color: Colors.grey[600],
