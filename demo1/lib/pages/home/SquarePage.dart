@@ -89,6 +89,17 @@ class _SquarePageState extends State<SquarePage> {
     return _messages;
   }
 
+  bool isImageUrl(String str) {
+    final uri = Uri.tryParse(str);
+    return uri != null &&
+        (str.endsWith('.png') ||
+            str.endsWith('.jpg') ||
+            str.endsWith('.jpeg') ||
+            str.endsWith('.gif') ||
+            str.endsWith('.webp')) &&
+        (str.startsWith('http://') || str.startsWith('https://'));
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat("yyyy-MM-dd HH:mm:ss");
@@ -193,7 +204,7 @@ class _SquarePageState extends State<SquarePage> {
                                                       constraints:
                                                           BoxConstraints(
                                                               maxWidth:
-                                                                  0.7 * width),
+                                                                  0.5 * width),
                                                       margin: const EdgeInsets
                                                           .symmetric(
                                                           vertical: 4),
@@ -209,15 +220,28 @@ class _SquarePageState extends State<SquarePage> {
                                                             BorderRadius
                                                                 .circular(8),
                                                       ),
-                                                      child: Text(
-                                                        msg['content'],
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          color: isMe
-                                                              ? Colors.white
-                                                              : Colors.black,
-                                                        ),
-                                                      ),
+                                                      child: isImageUrl(
+                                                              msg['content'])
+                                                          ? Image.network(
+                                                              msg['content'],
+                                                              fit: BoxFit.cover,
+                                                              errorBuilder: (_,
+                                                                      __,
+                                                                      ___) =>
+                                                                  const Text(
+                                                                      '图片加载失败'),
+                                                            )
+                                                          : Text(
+                                                              msg['content'],
+                                                              style: TextStyle(
+                                                                fontSize: 16,
+                                                                color: isMe
+                                                                    ? Colors
+                                                                        .white
+                                                                    : Colors
+                                                                        .black,
+                                                              ),
+                                                            ),
                                                     );
 
                                                     return Align(
