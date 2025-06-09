@@ -116,6 +116,8 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       if (_usernameController.text.isEmpty) {
         showError('用户名为空');
+      } else if(RegExp(r'[\u4e00-\u9fa5]').hasMatch(_usernameController.text)) {
+        showError('用户名暂时不能含有中文');
       } else if ( _passwordController.text.isEmpty) {
         showError('密码为空');
       } else if (!passwordChecked) {
