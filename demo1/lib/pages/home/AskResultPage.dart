@@ -45,6 +45,7 @@ class _AskResultPageState extends State<AskResultPage> {
   @override
   void initState() {
     _searchList = _askService.search(searchString);
+    print(_searchList);
     _searchList?.then((data) {
       for (int i = 0; i < data.length; ++i) {
         ids[i] = data[i]['id'];
@@ -190,13 +191,13 @@ class _AskResultPageState extends State<AskResultPage> {
                                               'assets/img.png',
                                               width: 0.12 * width,
                                               height: 0.12 * width,
-                                              fit: BoxFit.fill,
+                                              fit: BoxFit.cover,
                                             )
                                           : Image.network(
                                         UserService.getFullAvatarUrl(snapshot.data?[index]['avatar']),
                                               width: 0.12 * width,
                                               height: 0.12 * width,
-                                              fit: BoxFit.fill,
+                                              fit: BoxFit.cover,
                                             ),
                                 ),
                                 SizedBox(width: 0.03 * width),

@@ -285,18 +285,18 @@ class _ConversationPageState extends State<ConversationPage> {
             'assets/img.png',
             width: 32,
             height: 32,
-            fit: BoxFit.fill,
+            fit: BoxFit.cover,
           )
               : Image.network(
             avatarUrl,
             width: 32,
             height: 32,
-            fit: BoxFit.fill,
+            fit: BoxFit.cover,
             errorBuilder: (_, __, ___) => Image.asset(
               'assets/img.png',
               width: 32,
               height: 32,
-              fit: BoxFit.fill,
+              fit: BoxFit.cover,
             ),
           );
 
